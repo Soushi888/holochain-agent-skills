@@ -1,0 +1,61 @@
+name: Sync Discussion Forms
+
+# The "Skill version" dropdown of the discussion forms lists releases, and a
+# form cannot read the release list itself. This rewrites the dropdown from the
+# releases and commits the result to the default branch.
+#
+# Three ways in, because no single trigger sees every release:
+# - release.yml calls this after it publishes. A release created with
+#   GITHUB_TOKEN starts no new workflow run, so `on: release` below never
+#   fires for a tagged release and the call is the only path.
+# - `on: release` covers a release published, edited or deleted by hand in the
+#   web UI, where the event comes from a person and does start a run.
+# - workflow_dispatch, for anything else.
+
+on:
+  workflow_call:
+  workflow_dispatch:
+  release:
+    types: [published, edited, deleted, unpublished]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sync-discussion-forms
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    name: Skill version choices match the releases
+    runs-on: ubuntu-latest
+    steps:
+      # The triggering ref is a tag for a release event, and a commit there
+      # would land nowhere. Check out the default branch explicitly, with the
+      # tags, since the Holochain line of each release is read at its tag.
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 0
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Rewrite the dropdowns from the releases
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: bun scripts/sync-version-options.ts
+
+      - name: Commit when anything changed
+        run: |
+          if git diff --quiet -- .github/DISCUSSION_TEMPLATE; then
+            echo "Forms already match the releases."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898183+github-actions[bot]@users.noreply.github.com"
+          git add .github/DISCUSSION_TEMPLATE
+          git commit -m "docs(community): sync skill-version choices with releases"
+          git push origin "HEAD:${{ github.event.repository.default_branch }}"

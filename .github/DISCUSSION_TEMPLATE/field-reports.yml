@@ -3,7 +3,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        You ran the skill on real Holochain work. This form is the most useful thing you can send while `v1.0.0-rc.1` is a candidate: what an agent does with the skill on a project the maintainers have never seen is the one thing CI cannot measure.
+        You ran the skill on real Holochain work. This form is the most useful thing you can send: what an agent does with the skill on a project the maintainers have never seen is the one thing CI cannot measure.
 
         Good reports and bad reports are equally welcome. "It routed straight to the right page and the zome compiled first try" is evidence too.
 
@@ -14,7 +14,7 @@ body:
     attributes:
       label: Skill version
       options:
-        - v1.0.0-rc.1
+        - v1.0.0-rc.1 (pre-release, Holochain 0.7)
         - main (unreleased)
         - v0.2.0 (Holochain 0.6)
         - Other (say which below)

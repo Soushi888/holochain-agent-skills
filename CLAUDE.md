@@ -45,7 +45,7 @@ skills/holochain/            THE SHIPPED SKILL. Nothing outside this directory s
   assets/templates/            Real template files (flake.nix, Cargo.toml, happ.yaml, dna.yaml, zome lib.rs, sweettest harness)
   LICENSE                      Apache-2.0, shipped with the skill so an installed copy carries its licence
 
-scripts/                     validate-skill.sh (CI gate), bump-versions.sh, install.ts, eval/
+scripts/                     validate-skill.sh (CI gate), bump-versions.sh, install.ts, sync-version-options.ts, eval/
 nix/                         skill.nix (the derivation), mk-skills-hook.nix (the devShell fragment)
 docs/                        Requirements spec, roadmap, testing matrix. NOT loaded by the skill
 AGENTS.md                    Install instructions addressed to an agent handed the repo URL
@@ -99,6 +99,8 @@ Exact pins (`=`) are required. Holochain is sensitive to minor version changes. 
 - **The landing page reads right to a visitor**: welcome first, current release post second, both linking to tags that exist.
 
 Posting and editing go through `gh api graphql` (`createDiscussion`, `updateDiscussion`). Pinning has no API, since GraphQL exposes no pin mutation, so pins are set in the web UI from the discussion's sidebar.
+
+The "Skill version" dropdown in the Field Reports and Q&A forms is not part of that checklist: never edit it by hand. `scripts/sync-version-options.ts` rewrites it from the releases (per Holochain line, the newest stable release plus the newest pre-release newer than it), and `.github/workflows/sync-discussion-forms.yml` runs it after every tag, called from `release.yml`, and whenever a release is published, edited or deleted in the web UI. `bun scripts/sync-version-options.ts --check` says whether the forms are in step.
 
 ## Key Architectural Concepts (for editing reference files accurately)
 

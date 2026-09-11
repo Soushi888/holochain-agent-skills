@@ -154,3 +154,14 @@ jobs:
             dist/holochain-agent-skills-${{ steps.tag.outputs.version }}.zip
             dist/holochain-agent-skills.tar.gz
             dist/SHA256SUMS
+
+  sync-discussion-forms:
+    # The release above is created with GITHUB_TOKEN, and an event raised by
+    # that token starts no workflow run, so the sync workflow's own
+    # `on: release` never sees a tagged release. Calling it here is the path.
+    # It reads the release list as it is, so it runs even when the release job
+    # failed: with no new release it finds nothing to change.
+    name: Sync the discussion forms
+    needs: release
+    if: github.event_name == 'push' && !cancelled()
+    uses: ./.github/workflows/sync-discussion-forms.yml
