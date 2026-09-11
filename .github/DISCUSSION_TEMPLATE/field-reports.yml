@@ -64,6 +64,7 @@ body:
       label: What else was the agent reading?
       description: This tells us how much of the result the skill alone is responsible for.
       options:
+        - "(choose one)"
         - Only this skill, no other instructions loaded
         - Other skills, or a CLAUDE.md / AGENTS.md / rules file, were also loaded
         - Not sure
@@ -102,6 +103,7 @@ body:
     attributes:
       label: Outcome
       options:
+        - "(choose one)"
         - Worked on the first attempt
         - Worked after I corrected the agent
         - Code did not compile
