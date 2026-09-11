@@ -90,6 +90,16 @@ Exact pins (`=`) are required. Holochain is sensitive to minor version changes. 
 - **Only `skills/` ships.** `npm pack --dry-run` is the check: if a file outside `skills/`, `bin/`, `README.md` or `LICENSE` appears in the tarball, the `files` array in `package.json` is wrong.
 - **docs/ is not part of the skill.** `docs/requirements.md`, `docs/roadmap.md` and `docs/testing.md` are project tracking.
 
+## Every Release Updates the Pinned Discussions
+
+[Discussions](https://github.com/Soushi888/holochain-agent-skills/discussions) is where feedback on each release arrives, and its two pinned posts are the first thing a visitor reads. A release that leaves them pointing at the previous tag hands every new reporter a stale install command and asks for feedback on a version nobody should install anymore. So every tag, release candidate or stable, is not finished until:
+
+- **The current release post is pinned in Announcements, and only that one.** Rewrite the previous release post for the new tag or open a new one (install command naming the new tag, what changed, what feedback is wanted), then unpin the old one. The `v1.0.0-rc.1` call is #6.
+- **The welcome post (#5) links the current release post by number**, and its "What helps most right now" section matches the stage: candidate feedback before a stable tag, regular field reports after.
+- **The landing page reads right to a visitor**: welcome first, current release post second, both linking to tags that exist.
+
+Posting and editing go through `gh api graphql` (`createDiscussion`, `updateDiscussion`). Pinning has no API, since GraphQL exposes no pin mutation, so pins are set in the web UI from the discussion's sidebar.
+
 ## Key Architectural Concepts (for editing reference files accurately)
 
 - Every Holochain domain = one integrity crate (`hdi`) + one coordinator crate (`hdk`)
