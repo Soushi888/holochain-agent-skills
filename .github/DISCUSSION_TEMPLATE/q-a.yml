@@ -1,0 +1,45 @@
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Ask about using the skill, or about Holochain 0.7 work you are doing with it loaded. When someone answers, mark the reply as the answer so the next person finds it.
+
+  - type: dropdown
+    id: skill-version
+    attributes:
+      label: Skill version
+      options:
+        - v1.0.0-rc.1
+        - main (unreleased)
+        - v0.2.0 (Holochain 0.6)
+        - Not installed yet
+    validations:
+      required: true
+
+  - type: dropdown
+    id: harness
+    attributes:
+      label: Agent harness
+      options:
+        - Claude Code
+        - opencode
+        - GitHub Copilot
+        - Cursor
+        - Gemini CLI
+        - Codex
+        - Other
+        - None, reading the docs directly
+
+  - type: input
+    id: holochain-versions
+    attributes:
+      label: Holochain / hdk / hdi versions
+      placeholder: "holochain 0.7.0, hdk = \"=0.7.0\", hdi = \"=0.8.0\""
+
+  - type: textarea
+    id: question
+    attributes:
+      label: Your question
+      description: Include literal error text where there is any.
+    validations:
+      required: true

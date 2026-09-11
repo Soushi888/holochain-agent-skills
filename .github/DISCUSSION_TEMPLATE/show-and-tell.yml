@@ -1,0 +1,25 @@
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Built something with the skill loaded? A hApp, a zome, a port from 0.6, a harness setup that works well. Show it.
+
+  - type: textarea
+    id: what
+    attributes:
+      label: What you built
+      description: A few lines, plus a link to the repository or a screenshot if you can share one.
+    validations:
+      required: true
+
+  - type: input
+    id: setup
+    attributes:
+      label: Harness and model
+      placeholder: "opencode with GLM 5.3"
+
+  - type: textarea
+    id: skill-role
+    attributes:
+      label: Where the skill helped, and where it did not
+      description: Optional, and it feeds straight into the next release.

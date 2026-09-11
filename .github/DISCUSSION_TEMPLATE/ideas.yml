@@ -1,0 +1,41 @@
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Ideas start here while they are still open questions. Once one is scoped enough to build, it moves to an issue. The planned directions are in [docs/roadmap.md](https://github.com/Soushi888/holochain-agent-skills/blob/main/docs/roadmap.md); saying which of them you would use first is useful input on its own.
+
+  - type: dropdown
+    id: kind
+    attributes:
+      label: What kind of idea
+      options:
+        - A pattern or reference page the skill is missing
+        - A new guided workflow
+        - A new template
+        - An ecosystem sub-skill (hREA / Valueflows, holochain-open-dev, AD4M, Holo Hosting, Unyt)
+        - Harness or install support
+        - Documentation site
+        - Something else
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: The problem
+      description: What were you or your agent trying to do, and where did the skill fall short?
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What you have in mind
+      description: Rough is fine. Links to code that does it well in a real hApp are gold.
+
+  - type: checkboxes
+    id: contribute
+    attributes:
+      label: Contributing
+      options:
+        - label: I could help write or verify this.

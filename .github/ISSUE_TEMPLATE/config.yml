@@ -1,1 +1,11 @@
 blank_issues_enabled: true
+contact_links:
+  - name: Report how the skill did on real work
+    url: https://github.com/Soushi888/holochain-agent-skills/discussions/new?category=field-reports
+    about: Ran the skill on a Holochain project? Tell us what the agent got right and wrong, even without a pinpointed defect.
+  - name: Ask a question
+    url: https://github.com/Soushi888/holochain-agent-skills/discussions/new?category=q-a
+    about: Questions about using the skill or about Holochain 0.7 work you are doing with it.
+  - name: Float an idea
+    url: https://github.com/Soushi888/holochain-agent-skills/discussions/new?category=ideas
+    about: A missing pattern, workflow or sub-skill that is not scoped enough for a feature request yet.

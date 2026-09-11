@@ -224,6 +224,10 @@ docs/                          Requirements, roadmap, testing matrix. Not part o
 AGENTS.md                      Install instructions addressed to an agent
 ```
 
+## Community
+
+Questions, ideas, and reports on how the skill behaved on your project go to [Discussions](https://github.com/Soushi888/holochain-agent-skills/discussions). While `v1.0.0-rc.1` is a candidate, a [field report](https://github.com/Soushi888/holochain-agent-skills/discussions/new?category=field-reports) is the most useful thing you can send. Issues are for defects you can point at a file.
+
 ## Contributing
 
 Contributions welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md) first; the short version is

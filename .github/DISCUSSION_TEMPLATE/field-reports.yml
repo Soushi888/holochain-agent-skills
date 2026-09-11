@@ -1,0 +1,139 @@
+title: "[Field report]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        You ran the skill on real Holochain work. This form is the most useful thing you can send while `v1.0.0-rc.1` is a candidate: what an agent does with the skill on a project the maintainers have never seen is the one thing CI cannot measure.
+
+        Good reports and bad reports are equally welcome. "It routed straight to the right page and the zome compiled first try" is evidence too.
+
+        If you already know the defect and the file it lives in, a [bug report issue](https://github.com/Soushi888/holochain-agent-skills/issues/new?template=bug_report.yml) is faster. A stale version pin has [its own form](https://github.com/Soushi888/holochain-agent-skills/issues/new?template=stale_version.yml).
+
+  - type: dropdown
+    id: skill-version
+    attributes:
+      label: Skill version
+      options:
+        - v1.0.0-rc.1
+        - main (unreleased)
+        - v0.2.0 (Holochain 0.6)
+        - Other (say which below)
+    validations:
+      required: true
+
+  - type: dropdown
+    id: harness
+    attributes:
+      label: Agent harness
+      options:
+        - Claude Code
+        - opencode
+        - GitHub Copilot
+        - Cursor
+        - Gemini CLI
+        - Codex
+        - Other (say which below)
+    validations:
+      required: true
+
+  - type: input
+    id: model
+    attributes:
+      label: Model
+      description: The model the harness was running, as precisely as you know it.
+      placeholder: "claude-sonnet-5, GLM 5.3, gpt-5-codex, ..."
+    validations:
+      required: true
+
+  - type: dropdown
+    id: install-method
+    attributes:
+      label: How you installed it
+      options:
+        - Release archive (curl | tar)
+        - Nix flake (mkSkillsHook or package)
+        - Bundled installer (bin/install.mjs)
+        - Manual copy or symlink of skills/holochain
+        - Shipped inside another tool
+    validations:
+      required: true
+
+  - type: dropdown
+    id: isolation
+    attributes:
+      label: What else was the agent reading?
+      description: This tells us how much of the result the skill alone is responsible for.
+      options:
+        - Only this skill, no other instructions loaded
+        - Other skills, or a CLAUDE.md / AGENTS.md / rules file, were also loaded
+        - Not sure
+    validations:
+      required: true
+
+  - type: input
+    id: holochain-versions
+    attributes:
+      label: Holochain / hdk / hdi versions in the project
+      placeholder: "holochain 0.7.0, hdk = \"=0.7.0\", hdi = \"=0.8.0\""
+
+  - type: dropdown
+    id: project-kind
+    attributes:
+      label: Kind of work
+      options:
+        - New hApp from scratch
+        - Adding to an existing 0.7 hApp
+        - Porting a 0.6 hApp to 0.7
+        - Debugging or reviewing existing code
+        - Questions only, no code written
+    validations:
+      required: true
+
+  - type: textarea
+    id: task
+    attributes:
+      label: What you asked the agent to do
+      description: The prompt or a faithful summary of it.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: outcome
+    attributes:
+      label: Outcome
+      options:
+        - Worked on the first attempt
+        - Worked after I corrected the agent
+        - Code did not compile
+        - Compiled, but the approach or behaviour was wrong
+        - Not applicable, no code was produced
+    validations:
+      required: true
+
+  - type: textarea
+    id: pages-loaded
+    attributes:
+      label: Which skill pages did the agent open?
+      description: If your harness shows file reads, list the `references/` or `workflows/` pages it loaded. Name any page it should have loaded and did not.
+      placeholder: |
+        Loaded: SKILL.md, references/patterns.md
+        Should have loaded: references/membranes.md
+
+  - type: textarea
+    id: went-wrong
+    attributes:
+      label: What went wrong
+      description: Stale or invented APIs, a workflow that sent the agent sideways, a missing pattern. Paste compiler or conductor errors literally, in a fenced code block, not paraphrased.
+
+  - type: textarea
+    id: went-right
+    attributes:
+      label: What went right
+      description: Worth saying. It tells us what not to break.
+
+  - type: checkboxes
+    id: consent
+    attributes:
+      label: Follow-up
+      options:
+        - label: A maintainer may open issues from this report and ask me follow-up questions here.
