@@ -28,11 +28,11 @@ body:
       options:
         - Claude Code
         - opencode
-        - GitHub Copilot
+        - Hermes Agent
         - Cursor
+        - Devin
         - Gemini CLI
         - Codex
-        - Hermes Agent
         - Other (say which below)
     validations:
       required: true
