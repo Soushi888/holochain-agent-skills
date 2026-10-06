@@ -100,17 +100,17 @@ pub fn ed_25519_x_salsa20_poly1305_decrypt(
 ) -> ExternResult<XSalsa20Poly1305Data>
 ```
 
-The secretbox and x25519 variants return `None` when the ciphertext does not open; the ed25519 variant returns an error instead.
+Only the secretbox variant returns `None` when the ciphertext does not open: `x_salsa20_poly1305_decrypt` in `holochain 0.7.0` turns every keystore error into `None`. The x25519 variant returns `Option` but never `None` in practice; the host function propagates the lair error and wraps every success in `Some`, so a box that does not open comes back as `Err(WasmError { error: Host(..) })`. The ed25519 variant returns an error the same way. Match on the error path for both box variants, not on `None`.
 
 ## Size limit: about 8 KiB per keystore request
 
-Every function on this page hands its payload to lair, and every lair request travels down a framed channel that refuses any frame over 8 KiB (`const MAX_FRAME: usize = 1024 * 8` in `lair_keystore_api 0.7.1`, `src/sodium_secretstream.rs`). That holds for the in-process keystore too: it talks to its server over the same framed stream. The frame also carries the request envelope, so the plaintext you can encrypt in one call is smaller than 8192 bytes. Over the limit, the call fails at runtime with a host error, not at compile time:
+Every function on this page hands its payload to lair, and every lair request travels down a framed channel that refuses any frame over 8 KiB (`const MAX_FRAME: usize = 1024 * 8` in `lair_keystore_api 0.7.1`, `src/sodium_secretstream.rs`). That holds for the in-process keystore too: it talks to its server over the same framed stream. The frame also carries the request envelope, so the plaintext you can encrypt in one call is smaller than 8192 bytes. Over the limit, the call fails at runtime, not at compile time. Encrypt functions and the two box decrypt functions return a host error:
 
 ```
 WasmError { module_path: "holochain::core::ribosome::host_fn::x_salsa20_poly1305_encrypt", line: 36, error: Host("{\"error\":\"FrameOverflow\",\"message\":\"29937 > 8192\"}") }
 ```
 
-That error came from a Sweettest run encrypting a record holding a 20 KB photo. The `hdk` doc comment already says secretbox "is designed for 'small' data, break large data into chunks with unique nonces"; the frame limit is what makes that advice binding.
+That error came from a Sweettest run encrypting a record holding a 20 KB photo. `x_salsa20_poly1305_decrypt` is the exception: it swallows the overflow with every other keystore error, so an oversized secretbox ciphertext looks exactly like one that did not open (`Ok(None)`). The `hdk` doc comment already says secretbox "is designed for 'small' data, break large data into chunks with unique nonces"; the frame limit is what makes that advice binding.
 
 For anything that is not reliably small, encrypt the content in the zome with a fresh one-use key and a pure-Rust AEAD, then pass only that 32-byte key through lair (`x_salsa20_poly1305_encrypt` under the long-lived key, or one of the box functions). Decrypting is the same two steps in reverse. The long-lived key never leaves lair; what crosses Wasm memory is the one-use key for the one item being read or written. This envelope shape is not part of the example hApp, so no Rust is given for it here. One worked write-up, using the `chacha20poly1305` crate with `default-features = false` (XChaCha20-Poly1305): [Hearth, `docs/encryption.md`](https://github.com/topeuph-ai/hearth/blob/main/docs/encryption.md).
 
