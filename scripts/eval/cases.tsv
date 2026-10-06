@@ -38,3 +38,6 @@ O02	my two agents don't seem to see each other's data when I run the test, is th
 O03	the conductor just quits right after we finished bumping the version, no error, nothing	references/troubleshooting.md
 O04	users are telling us their whole local state disappears every time we push a new build, is that expected?	references/deployment.md
 O05	how do I get people's old chain history to show up once everyone's moved to the new DNA?	references/migration.md
+R35	Encrypting a record that holds a photo fails with FrameOverflow 29937 > 8192, how do I store it encrypted?	references/cryptography.md
+R36	We shipped a patch release of our Kangaroo app and the new screens call zome functions that do not exist, why?	references/deployment.md
+R37	How do I run UpdateCoordinators on launch so a coordinator fix reaches users without wiping their data?	references/deployment.md
