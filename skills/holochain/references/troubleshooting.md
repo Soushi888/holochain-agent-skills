@@ -92,7 +92,7 @@ Fixed in stable v0.700.0. If you are on stable and see one of these, something e
 
 | Error / symptom | Cause | Fix |
 |---|---|---|
-| `Host("{\"error\":\"FrameOverflow\",\"message\":\"<n> > 8192\"}")` from an encrypt or decrypt host function | Every lair request is capped at an 8 KiB frame, envelope included | Encrypt the content in the zome with a one-use key and send only that key through lair. See `cryptography.md` § Size limit |
+| `Host("{\"error\":\"FrameOverflow\",\"message\":\"<n> > 8192\"}")` from an encrypt host function or a box decrypt, or `x_salsa20_poly1305_decrypt` returning `None` on a large ciphertext | Every lair request is capped at an 8 KiB frame, envelope included. Secretbox decrypt turns every keystore error, the overflow included, into `None` | Encrypt the content in the zome with a one-use key and send only that key through lair. See `cryptography.md` § Size limit |
 | `call_remote` returns `NetworkError` although the peer is online | The remote function returned `Err` or does not exist; 0.7 reports that as a p2p failure, not as its own variant | Read the message text, or return typed refusals inside `Ok`. See `patterns.md` § `call_remote` |
 
 ---
@@ -114,8 +114,8 @@ Fixed in stable v0.700.0. If you are on stable and see one of these, something e
 | Symptom | Cause | Fix |
 |---|---|---|
 | Kangaroo build uses the wrong conductor | Cloned the default branch | `git checkout main-0.7`. `main-0.7` pins holochain 0.7.0; `main-0.6` pins 0.6.3 |
-| App will not start after a version bump | Kangaroo isolates data folders on minor and major bumps by design | Expected. Only patch bumps share a data folder |
-| New UI calls functions the zome does not have after a patch release | Kangaroo installs the `.happ` only when `kangaroo.happ` is not installed yet, and a patch release reuses the installed conductor | Swap coordinators with `UpdateCoordinators` on launch, or use a minor bump. See `deployment.md` § Critical Versioning Semantics |
+| App will not start after a version bump | Kangaroo keys the data folder on a breaking version: `0.0.<patch>`, then `0.<minor>.x`, then `<major>.x.x` from 1.0; a pre-release on its base version plus first identifier | Expected when the breaking version changed. Below 1.0 a minor bump and every `0.0.x` patch get a new folder; from 1.0 only a major bump does. See `deployment.md` § Critical Versioning Semantics |
+| New UI calls functions the zome does not have after a patch release, or after a minor release from 1.0 on | Kangaroo installs the `.happ` only when `kangaroo.happ` is not installed yet, and any bump that keeps the breaking version reuses the installed conductor | Swap coordinators with `UpdateCoordinators` on launch, or make a bump that changes the data folder (minor below 1.0, major from 1.0). See `deployment.md` § Critical Versioning Semantics |
 | Windows MSI build fails | Special characters in `PRODUCT_NAME` | Alphanumerics and hyphens only |
 
 See also `deployment.md`, `testing.md` and `scaffolding.md`, which point here rather than repeating these tables.

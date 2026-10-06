@@ -138,20 +138,21 @@ Kangaroo uses a versioning convention that controls user data isolation:
 |----------------|-------------|--------|
 | Patch (`0.1.0 → 0.1.1`) | **Shared** | User keeps data, **but the new `.happ` is not installed** (see below) |
 | Patch on `0.0.x` (`0.0.1 → 0.0.2`) | **Isolated** | Every `0.0.x` patch is its own folder: user starts fresh |
-| Minor (`0.1.0 → 0.2.0`) | **Isolated** | Breaking: user starts fresh, as a new agent |
-| Major (`0.1.0 → 1.0.0`) | **Isolated** | Breaking: user starts fresh, as a new agent |
+| Minor below 1.0 (`0.1.0 → 0.2.0`) | **Isolated** | Breaking: user starts fresh, as a new agent |
+| Minor or patch from 1.0 on (`1.0.0 → 1.1.0`) | **Shared** | Same as a patch: user keeps data, **but the new `.happ` is not installed** |
+| Major (`0.1.0 → 1.0.0`, `1.2.0 → 2.0.0`) | **Isolated** | Breaking: user starts fresh, as a new agent |
 | Pre-release tag | Keyed on `major.minor.patch-<first prerelease identifier>` | `0.2.0-beta.1 → 0.2.0-beta.2` shares a folder; a different base version or identifier does not |
 
 The folder name comes from `breakingAppVersion()` in `src/main/filesystem.ts` on Kangaroo `main-0.7`: `0.0.<patch>` while major and minor are both 0, `0.<minor>.x` while major is 0, `<major>.x.x` after that.
 
-**A patch release ships new UI on old zomes.** On launch, `installHappIfNecessary()` in `src/main/holochainManager.ts` returns early when an app with id `kangaroo.happ` (`HAPP_APP_ID` in `src/main/const.ts`) is already installed. A patch release reuses the same conductor, where that id is already installed, so the `.happ` bundled in the new build is never installed. The UI does come from the new build, so the result is new screens calling the previous release's zome functions, with no error at install time.
+**A patch release ships new UI on old zomes.** On launch, `installHappIfNecessary()` in `src/main/holochainManager.ts` returns early when an app with id `kangaroo.happ` (`HAPP_APP_ID` in `src/main/const.ts`) is already installed. A patch release (or a minor release from 1.0 on) reuses the same conductor, where that id is already installed, so the `.happ` bundled in the new build is never installed. The UI does come from the new build, so the result is new screens calling the previous release's zome functions, with no error at install time.
 
 - **Coordinator-only changes** can still ship in a patch release if the app does the swap itself: on launch, when the app id is already installed, read the coordinator zomes out of the bundled `.happ` and send the admin `UpdateCoordinators` request (`adminWebsocket.updateCoordinators()` in `@holochain/client`) for every cell, clones included, since each `UpdateCoordinatorsPayload` names one `cell_id`. This is a patch to Kangaroo's main process, not a setting. One worked example: [Hearth's `desktop-patches/`](https://github.com/topeuph-ai/hearth/tree/main/desktop-patches).
-- **Integrity changes** cannot go that way. They change the DNA hash, so they need a new app id or a minor bump, plus whatever in-app migration carries the data across (see `migration.md`).
+- **Integrity changes** cannot go that way. They change the DNA hash, so they need a new app id or a bump that changes the data folder (a minor bump below 1.0, a major bump from 1.0 on), plus whatever in-app migration carries the data across (see `migration.md`).
 
-**An isolated bump also changes who the user is.** The same `installHappIfNecessary()` calls `generateAgentPubKey()` for every fresh install, so after a minor or major bump the user is a new agent to every peer who knew them, not just someone with an empty database.
+**An isolated bump also changes who the user is.** The same `installHappIfNecessary()` calls `generateAgentPubKey()` for every fresh install, so after any bump that changes the data folder the user is a new agent to every peer who knew them, not just someone with an empty database.
 
-**Rule of thumb:** Use a patch bump only for changes that need no new `.happ` (UI-only), or for coordinator changes when the app runs the `UpdateCoordinators` step above. Start real releases at `0.1.0`, not `0.0.x`. Reserve minor/major bumps for intentional breaking changes where data migration is not required (or is handled in-app).
+**Rule of thumb:** Use a bump that keeps the data folder (a patch, or a minor from 1.0 on) only for changes that need no new `.happ` (UI-only), or for coordinator changes when the app runs the `UpdateCoordinators` step above. Start real releases at `0.1.0`, not `0.0.x`. Reserve folder-changing bumps (minor below 1.0, major from 1.0) for intentional breaking changes where data migration is not required (or is handled in-app).
 
 ---
 
@@ -229,7 +230,7 @@ Kangaroo uses `@matthme/electron-updater` — a semver-aware fork of `electron-u
 
 | Error / Symptom | Cause | Fix |
 |-----------------|-------|-----|
-| App won't start after version bump | Minor/major bump → new isolated data folder | Expected behavior. User data not migrated automatically — implement migration if needed. |
+| App won't start after version bump | Bump changed the breaking version (minor below 1.0, major from 1.0) → new isolated data folder | Expected behavior. User data is not migrated automatically; implement migration if needed. |
 | Network connectivity fails | iroh relay not configured | Add `relayUrl` to conductor config in `electron/config.ts` |
 | Conductor exits immediately on start | Config still sets `signal_url` / `webrtc_config` / `chc_url` / `db_sync_strategy` | Remove them. 0.7 rejects unknown `NetworkConfig` fields instead of ignoring them. `db_sync_strategy` is now `db_sync_level` (`Full`/`Normal`/`Off`) |
 | Conductor can't read existing data after upgrade | 0.7 renamed its databases and changed DNA hashes | Expected. There is no migration path; clear conductor data (`hc sandbox clean`). You are joining a new network |

@@ -145,11 +145,12 @@ Apply the correct version bump type for each future release.
 |-------------|-------------|-----------|
 | UI-only fix or enhancement | **Patch** (`0.1.0 → 0.1.1`) | Preserved |
 | Coordinator zome fix | **Patch**, only if the app runs `UpdateCoordinators` on launch | Preserved |
-| New features, integrity or schema changes | **Minor** (`0.1.0 → 0.2.0`) | Isolated (user starts fresh, with a new agent key) |
+| New features, integrity or schema changes | **Minor** below 1.0 (`0.1.0 → 0.2.0`), **Major** from 1.0 on (`1.2.0 → 2.0.0`) | Isolated (user starts fresh, with a new agent key) |
 | Breaking architecture change | **Major** (`0.1.0 → 1.0.0`) | Isolated |
+| Any minor from 1.0 on (`1.0.0 → 1.1.0`) | Treat as a patch | Preserved, and the new `.happ` is not installed |
 | Pre-release tag | Any | Shared only between pre-releases of the same base version and identifier |
 
-**Rule:** A patch release keeps the user's data but does **not** install the `.happ` it ships, so a zome change in a patch release reaches nobody unless the app swaps coordinators itself. Start at `0.1.0`: on `0.0.x`, every patch gets a fresh data folder. Details and source references in `../deployment.md` § Critical Versioning Semantics.
+**Rule:** A patch release keeps the user's data but does **not** install the `.happ` it ships, so a zome change in a patch release reaches nobody unless the app swaps coordinators itself. From 1.0 on the same holds for a minor release, because the data folder is keyed on the major version alone. Start at `0.1.0`: on `0.0.x`, every patch gets a fresh data folder. Details and source references in `../deployment.md` § Critical Versioning Semantics.
 
 ---
 
