@@ -359,6 +359,16 @@ where
 let result: MyOtherEntry = external_local_call("other_zome", "get_entry", hash)?;
 ```
 
+### `call_remote`: a refusal arrives as `NetworkError`
+
+The same `ZomeCallResponse` match does not read the same way for `call_remote`. Locally, a callee that returns `Err` makes `call(...)` itself fail, so the `?` above propagates it. Across the network, `NetworkError` covers far more than "unreachable":
+
+- When the remote function returns `Err`, or does not exist, the remote ribosome returns a `RibosomeError` (`holochain 0.7.0`, `src/core/ribosome.rs`). The remote cell's handler unwraps it with `??` and it leaves as a p2p failure (`src/conductor/cell.rs`, `handle_call_remote`), and so does a failed signature check on the remote side.
+- The caller's host function turns every p2p failure into `Ok(ZomeCallResponse::NetworkError(e.to_string()))` (`src/core/ribosome/host_fn/call.rs`).
+- A failed capability check is the exception: it comes back as its own `Unauthorized` variant.
+
+So "the other agent refused" and "the other agent could not be reached" are the same variant, and only the string tells them apart: a guest error from the remote carries its message inside the text (one 0.7 hApp in the field tells them apart by looking for `Guest("` in it). Treat that as a heuristic, not a stable contract. When the difference matters to users, prefer making the remote function return `Ok` with a typed refusal in its output, and keep `Err` for genuine faults.
+
 ---
 
 ## Signals (post_commit)

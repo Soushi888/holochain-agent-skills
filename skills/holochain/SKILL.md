@@ -63,7 +63,7 @@ Load on demand based on task:
 | `references/scaffolding.md` | New project setup, Holonix installation, Nix flake, hc CLI, `hc scaffold` commands, new domain, adding a new domain to existing project |
 | `references/patterns.md` | Entry types, link types, CRUD, cross-zome calls, validation (`FlatOp`, `TypedAction<D>`), HDK 0.7 get/link API (`GetStrategy`, `LinkQuery`, `GetOptions`, get_links), update chain, `ZomeCallResponse` variants (NetworkError, Unauthorized), warrants and chain forks, must_get, signals (remote signal, init cap grant) |
 | `references/access-control.md` | Cap grants, capability grants, capability system, cap claim, remote signal, recv_remote_signal setup, admin-only access |
-| `references/cryptography.md` | App-level signing and encryption: `sign`, `sign_ephemeral`, `verify_signature` in validation, secretbox vs box, `create_x25519_keypair`, encrypting to an AgentPubKey, and what encryption does not buy you |
+| `references/cryptography.md` | App-level signing and encryption: `sign`, `sign_ephemeral`, `verify_signature` in validation, secretbox vs box, `create_x25519_keypair`, encrypting to an AgentPubKey, decrypting, the 8 KiB keystore limit (`FrameOverflow`) and encrypting large content, and what encryption does not buy you |
 | `references/scheduling.md` | Scheduled functions, `schedule()`, `Schedule::Persisted` crontab vs `Schedule::Ephemeral`, `#[hdk_extern(infallible)]`, scheduler loop timing, why scheduled fns run as the chain author |
 | `references/countersigning.md` | Countersigning, atomic multi-agent commits, `PreflightRequest`, `accept_countersigning_preflight_request`, session times, enzymatic sessions, M of N optional signers, `unstable-countersigning` feature gate |
 | `references/cell-cloning.md` | Cell cloning, partitioned data, own copy of the DNA, clone roles, createCloneCell, clone_limit |
@@ -77,7 +77,7 @@ Load on demand based on task:
 | `references/membranes.md` | Membrane proof, `genesis_self_check`, gating who may join, `AgentValidationPkg` validation, `provideMemproofs`, `awaiting_memproofs`, invite codes |
 | `references/source-chain.md` | `query()` and `ChainQueryFilter` over your own chain, `agent_info` / `zome_info` / `call_info` / `dna_info`, scratch-space chain head, `sys_time`, `random_bytes`, tracing from wasm, validation receipts |
 | `references/migration.md` | DNA migration, `init_properties`, `get_init_properties()`, carry over, chain history, carrying data across DNA versions, why 0.7 is a new network |
-| `references/deployment.md` | Packaging, distributing, Kangaroo-Electron, installers, desktop app, versioning, version bump, data resets after update |
+| `references/deployment.md` | Packaging, distributing, Kangaroo-Electron, installers, desktop app, versioning, version bump, data resets after update, patch release not installing the new hApp, updating coordinators |
 
 ## Quick Reference
 

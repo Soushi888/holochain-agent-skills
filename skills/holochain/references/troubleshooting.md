@@ -88,6 +88,15 @@ Fixed in stable v0.700.0. If you are on stable and see one of these, something e
 
 ---
 
+## Runtime
+
+| Error / symptom | Cause | Fix |
+|---|---|---|
+| `Host("{\"error\":\"FrameOverflow\",\"message\":\"<n> > 8192\"}")` from an encrypt or decrypt host function | Every lair request is capped at an 8 KiB frame, envelope included | Encrypt the content in the zome with a one-use key and send only that key through lair. See `cryptography.md` § Size limit |
+| `call_remote` returns `NetworkError` although the peer is online | The remote function returned `Err` or does not exist; 0.7 reports that as a p2p failure, not as its own variant | Read the message text, or return typed refusals inside `Ok`. See `patterns.md` § `call_remote` |
+
+---
+
 ## Testing
 
 | Symptom | Cause | Fix |
@@ -106,6 +115,7 @@ Fixed in stable v0.700.0. If you are on stable and see one of these, something e
 |---|---|---|
 | Kangaroo build uses the wrong conductor | Cloned the default branch | `git checkout main-0.7`. `main-0.7` pins holochain 0.7.0; `main-0.6` pins 0.6.3 |
 | App will not start after a version bump | Kangaroo isolates data folders on minor and major bumps by design | Expected. Only patch bumps share a data folder |
+| New UI calls functions the zome does not have after a patch release | Kangaroo installs the `.happ` only when `kangaroo.happ` is not installed yet, and a patch release reuses the installed conductor | Swap coordinators with `UpdateCoordinators` on launch, or use a minor bump. See `deployment.md` § Critical Versioning Semantics |
 | Windows MSI build fails | Special characters in `PRODUCT_NAME` | Alphanumerics and hyphens only |
 
 See also `deployment.md`, `testing.md` and `scaffolding.md`, which point here rather than repeating these tables.

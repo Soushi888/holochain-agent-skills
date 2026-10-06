@@ -81,13 +81,44 @@ pub fn ed_25519_x_salsa20_poly1305_encrypt(
 
 Its own doc comment carries a warning: understand the downsides of reusing a signing key for encryption before you use it. See <https://doc.libsodium.org/advanced/ed25519-curve25519>. Prefer a dedicated x25519 keypair unless you have a specific reason not to.
 
-**On decryption.** The `hdk 0.7.0` `x_salsa20_poly1305` module exports the encrypt side and the shared-secret lifecycle listed above. Its doc comments reference decryption, but no `x_salsa20_poly1305_decrypt` appears in the module's public surface at that version. Check the crate you are actually building against before designing a round trip, and if you need it and it is missing, decrypt client-side instead of in the zome.
+**On decryption.** The decrypt side lives in `hdi 0.8.0` (`hdi::x_salsa20_poly1305`), which `hdk 0.7.0` re-exports with `pub use hdi::x_salsa20_poly1305::*` and lists in its prelude, so `use hdk::prelude::*` brings all three into scope:
+
+```rust
+pub fn x_salsa20_poly1305_decrypt(
+    key_ref: XSalsa20Poly1305KeyRef,
+    encrypted_data: XSalsa20Poly1305EncryptedData,
+) -> ExternResult<Option<XSalsa20Poly1305Data>>
+pub fn x_25519_x_salsa20_poly1305_decrypt(
+    recipient: X25519PubKey,
+    sender: X25519PubKey,
+    encrypted_data: XSalsa20Poly1305EncryptedData,
+) -> ExternResult<Option<XSalsa20Poly1305Data>>
+pub fn ed_25519_x_salsa20_poly1305_decrypt(
+    recipient: AgentPubKey,
+    sender: AgentPubKey,
+    encrypted_data: XSalsa20Poly1305EncryptedData,
+) -> ExternResult<XSalsa20Poly1305Data>
+```
+
+The secretbox and x25519 variants return `None` when the ciphertext does not open; the ed25519 variant returns an error instead.
+
+## Size limit: about 8 KiB per keystore request
+
+Every function on this page hands its payload to lair, and every lair request travels down a framed channel that refuses any frame over 8 KiB (`const MAX_FRAME: usize = 1024 * 8` in `lair_keystore_api 0.7.1`, `src/sodium_secretstream.rs`). That holds for the in-process keystore too: it talks to its server over the same framed stream. The frame also carries the request envelope, so the plaintext you can encrypt in one call is smaller than 8192 bytes. Over the limit, the call fails at runtime with a host error, not at compile time:
+
+```
+WasmError { module_path: "holochain::core::ribosome::host_fn::x_salsa20_poly1305_encrypt", line: 36, error: Host("{\"error\":\"FrameOverflow\",\"message\":\"29937 > 8192\"}") }
+```
+
+That error came from a Sweettest run encrypting a record holding a 20 KB photo. The `hdk` doc comment already says secretbox "is designed for 'small' data, break large data into chunks with unique nonces"; the frame limit is what makes that advice binding.
+
+For anything that is not reliably small, encrypt the content in the zome with a fresh one-use key and a pure-Rust AEAD, then pass only that 32-byte key through lair (`x_salsa20_poly1305_encrypt` under the long-lived key, or one of the box functions). Decrypting is the same two steps in reverse. The long-lived key never leaves lair; what crosses Wasm memory is the one-use key for the one item being read or written. This envelope shape is not part of the example hApp, so no Rust is given for it here. One worked write-up, using the `chacha20poly1305` crate with `default-features = false` (XChaCha20-Poly1305): [Hearth, `docs/encryption.md`](https://github.com/topeuph-ai/hearth/blob/main/docs/encryption.md).
 
 ## What none of this gives you
 
 - **Encryption is not access control.** A DHT authority still stores and gossips your ciphertext, sees its size, sees who authored it and when, and sees the link graph around it. Metadata leaks even when content does not.
 - **Signing is not identity.** A signature proves control of a key at some moment. Binding a key to a person is a separate problem, and 0.7 does not solve it in the SDK. See the DeepKey note in `architecture.md`.
-- **Validation cannot decrypt.** `validate()` is pure and has no keystore access, so it can check a signature but never inspect encrypted content. Design your invariants around what stays in the clear.
+- **Validation must not decrypt.** The host does let `validate()` call the decrypt functions (they need only deterministic keystore access, which validation is granted), but the answer depends on which keys the validating conductor happens to hold. Two authorities would reach different verdicts on the same op, which is exactly the non-determinism validation forbids. Check signatures and sizes in validation, never content, and design your invariants around what stays in the clear.
 
 ## Related
 
