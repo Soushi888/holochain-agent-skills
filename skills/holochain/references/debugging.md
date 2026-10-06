@@ -145,6 +145,69 @@ network:
 
 Then read the resulting JSON lines rather than trying to catch the moment live. Details in `networking.md`.
 
+## Observing a live dev network
+
+A scaffolded `npm start` / `bun start` runs `hc-spin`, which starts a local `kitsune2-bootstrap-srv` (bootstrap and relay on the same `127.0.0.1` port), then runs `hc sandbox generate --run` for each agent against it. Everything below reads what that run leaves on disk or exposes over HTTP. None of it launches anything, which matters when the project's own rules forbid an agent from starting the app.
+
+Observed on `holochain 0.7.0`, `hc 0.7.0` and `kitsune2-bootstrap-srv 0.5.0`, running the same two-agent `hc sandbox generate --run` against a local bootstrap server that `hc-spin 0.700.0` issues; commands and output shapes below are from that run.
+
+### Read-only probes, cheapest first
+
+| Probe | Answers |
+|---|---|
+| `.hc` in the directory the run started from | One line per sandbox directory. The directories live under `$TMPDIR`, not in the repo |
+| `.hc_live_<n>` beside it | The admin port of running sandbox `<n>`, one number per file. Present only while that conductor runs |
+| `<sandbox>/conductor-config.yaml`, `network:` block | `bootstrap_url`, `relay_url`, `target_arc_factor`. Settles "are they even on the same network" |
+| `<sandbox>/databases/` | One `dht-<DnaHash>.db` and one `p2p-peer-meta-<DnaHash>.db` per installed DNA. Comparing two agents' listings answers "did they get the same DNA" with no tooling |
+| `hc-client call --port $(cat .hc_live_0) list-agents` | Peers this conductor knows, each with `dna_hash` and `k2_space` (the space id the bootstrap server wants, see below) |
+| `hc-client call --port $(cat .hc_live_0) dump-network-metrics` | Per DNA: `local_agents[].storage_arc` and `target_arc`, and per peer `storage_arc`, `completed_rounds`, `peer_timeouts` |
+
+The bootstrap port is in `bootstrap_url`, and `hc-spin` also prints it on startup in a line containing `#kitsune2_bootstrap_srv#listening#127.0.0.1:<port>#`.
+
+### The bootstrap server's HTTP API
+
+The local bootstrap server answers plain HTTP, so it can be asked who has registered without touching either conductor:
+
+```bash
+curl -s http://127.0.0.1:$BOOT_PORT/health            # {} when up
+curl -s http://127.0.0.1:$BOOT_PORT/bootstrap/$SPACE  # registered agent infos for one space
+```
+
+`/bootstrap/<space>` returns a JSON array of `{ "agentInfo": "<JSON string>", "signature": ... }`. `agentInfo` is itself JSON; parse it to read `agent`, `space`, `createdAt`, `expiresAt`, `url` and `storageArc`.
+
+**The space id is not the DNA hash.** A Holochain hash such as `uhC0k…` is `u` plus 52 base64url characters, which decode to 39 bytes: a 3-byte type prefix, the 32-byte core, and a 4-byte location suffix. The space id is the 32-byte core alone, base64url-encoded **without padding**, 43 characters. Both wrong forms fail with a 400 that reads like a broken server:
+
+| Sent | Response |
+|---|---|
+| The full DNA hash | `400 Invalid input length: 53` |
+| The core with `=` padding | `400 Invalid padding` |
+| The core, unpadded | `200` and the agent infos |
+
+Easiest source of the right value is `k2_space` in `hc-client call list-agents`. To derive it by hand:
+
+```bash
+python3 -c 'import base64,sys; h=sys.argv[1][1:]; print(base64.urlsafe_b64encode(base64.urlsafe_b64decode(h+"="*(-len(h)%4))[3:35]).decode().rstrip("="))' uhC0k...
+```
+
+### `storageArc`: why two agents ignore each other at first
+
+`storageArc` is the slice of the DHT an agent claims to store and serve. `null` is `DhtArc::Empty`, the default (`kitsune2_api`, `src/arc.rs`): the agent holds nothing for anyone yet. `[0, 4294967295]` is the full arc.
+
+An agent's arc only grows after a gossip round with a peer reports its sectors as in sync (`update_storage_arcs` in `kitsune2_gossip`, `src/storage_arc.rs`). So on a fresh network **every agent starts at zero arc**, and cross-agent reads can come back empty until gossip has run. In the two-agent run above both agents registered with `"storageArc": null` and republished with the full arc about 105 seconds later; another 0.7 dev run saw 195 seconds. Expect a minute or more, not an instant.
+
+That window is a recurring dev-mode surprise: a cross-agent read that returns nothing in the first minutes of `npm start` is usually this, not a bug in the zome. Check `storageArc` (bootstrap) or `storage_arc` (`dump-network-metrics`) before debugging the code.
+
+### The Holochain Playground (`hc playground`)
+
+A browser view of conductors: source chains per agent, DHT entries with their actions. It is **not** part of holonix `main-0.7`. The 0.6 upgrade guide removed `hc playground` from scaffolded scripts, and holonix dropped the package on `main-0.6` when it moved to Holochain 0.6.1-rc.0 (commit `7b46630`, "remove playground from nix flake"). The last commit there that still builds it is `2fec8bf` (`hc-playground 0.500.0`, from `darksoil-studio/holochain-playground`). Some 0.7 projects still pin that commit as an extra flake input and run `hc playground` alongside `hc-spin`; check the project's `flake.nix` and `package.json` before assuming it is there.
+
+When it is running:
+
+- **Finding it.** It serves `http://localhost:8282`, or another free port if 8282 is taken; `SERVER_PORT` overrides. `ps -eo pid,args | grep playground` finds the process and `ss -tlnp | grep 8282` the port; its startup log line `App is running at http://localhost:<port>` names the port it actually took.
+- **Connecting it.** It reads every `.hc_live_*` file in its working directory each second and connects to those admin ports, so start it from the directory holding `.hc`. Passing `ws://localhost:<admin port>` URLs as arguments overrides the discovery.
+- **What not to trust.** Its package version is 0.500.0, two Holochain lines behind. On a 0.7 run its Dht Entries graph has been seen to show entries and actions but no links, although the code draws links as edges, so "not in the graph" never means "did not happen". Confirm with `dump-state` or a zome call.
+- **Driving it from an agent.** Its views are Lit web components rendered in shadow DOM, so text extraction and accessibility-tree reads come back empty. Take screenshots, or skip the playground and use the admin probes above.
+
 ## Test-time debugging
 
 Sweettest failures have their own tools, and they are usually the faster path: a two-agent test that reproduces the bug beats any amount of conductor archaeology. `RUST_LOG` and `WASM_LOG` both apply to Sweettest runs. See `testing.md`.
