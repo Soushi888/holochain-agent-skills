@@ -72,6 +72,7 @@ Fixed in stable v0.700.0. If you are on stable and see one of these, something e
 | Conductor exits immediately after a 0.7 upgrade | `NetworkConfig` rejects unknown fields rather than ignoring them | Remove `signal_url` and `webrtc_config`. Move `request_timeout_s` under `network`. Rename `db_sync_strategy` to `db_sync_level` (`Full`/`Normal`/`Off`; old `Resilient` maps to `Normal`, `Fast` to `Off`). Remove `chc_url` |
 | Conductor cannot read existing databases | 0.7 renamed its databases and there is no migration path | `hc sandbox clean`. Expected, not a bug |
 | Peers never connect after upgrading | DNA hashes changed in 0.7 even for otherwise identical DNAs, so you are on a new network | Everyone must be on the same build. Republish the DNA hash to your users |
+| `400 Invalid input length: 53` (or `Invalid padding`) from `GET /bootstrap/<id>` | The URL carries the full DNA hash, or a padded space id. The bootstrap API wants the 32-byte core, unpadded base64url | Use `k2_space` from `hc-client call list-agents`. See `debugging.md` § The bootstrap server's HTTP API |
 | `hc sandbox` rejects the network type | Only `mem` and `quic` remain; `webrtc` is gone with tx5 | Update scripts passing `webrtc` |
 | App manifest rejected for an unrecognised field | App and web-app manifests now reject unknown fields | Remove stray or misspelled keys. `manifest_version` is `'0'` |
 
@@ -92,6 +93,7 @@ Fixed in stable v0.700.0. If you are on stable and see one of these, something e
 
 | Symptom | Cause | Fix |
 |---|---|---|
+| In a fresh `npm start` / `bun start` network, agent B cannot read what agent A wrote for the first minute or more | Both agents start at zero storage arc (`storageArc: null`) and only take an arc after a gossip round | Expected. Check `storageArc` on the bootstrap server or `storage_arc` in `dump-network-metrics` before debugging the zome. See `debugging.md` § Observing a live dev network |
 | Cross-agent read returns `None` intermittently | Missing consistency wait | `await_consistency([&alice_cell, &bob_cell]).await.unwrap()` before every cross-agent read. `await_consistency_s(n, ..)` for a custom timeout |
 | Suites over roughly 8 tests hang or flake | Too many in-process conductors at once | `cargo test -- --test-threads 6` |
 | `Conductor::install_app_with_manifest` not found | Moved behind a feature in 0.7 | Enable the `test_utils` feature |
