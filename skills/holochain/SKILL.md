@@ -39,7 +39,7 @@ When proactively invoked: load `references/architecture.md` + `references/patter
 
 ## Version Check First
 
-This skill teaches **Holochain 0.7 only**: the `hdk` 0.7 and `hdi` 0.8 lines, holonix `main-0.7`. Every API shape in it is wrong on another line, and an agent that writes 0.7 code into a 0.6 project, or 0.6 code from memory into a 0.7 one, produces calls that do not exist. So before writing or reviewing code in an existing project, find the versions the project actually builds with. The lockfile is the authority, because a manifest pin can be a workspace reference or a range, and because `hdk = "=0.7.0"` with a fresh lockfile already resolves the 0.7.1 type crates:
+This skill teaches **Holochain 0.7 only**: the `hdk` 0.7 and `hdi` 0.8 lines, holonix `main-0.7`. Every API shape in it is wrong on another line, and an agent that writes 0.7 code into a 0.6 project, or 0.6 code from memory into a 0.7 one, produces calls that do not exist. So before writing or reviewing code in an existing project, find the versions the project actually builds with. The lockfile is the authority, because a manifest pin can be a workspace reference or a range, and because an exact 0.7.0 pin on `hdk` with a fresh lockfile already resolves the 0.7.1 type crates:
 
 ```bash
 grep -A1 -E '^name = "(hdk|hdi|holochain_integrity_types)"$' Cargo.lock
