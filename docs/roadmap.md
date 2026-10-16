@@ -1,6 +1,6 @@
 # Roadmap
 
-## v1 - Core Spiral (SHIPPED 2026-08-17, v1.0.0)
+## v1 - Core Spiral (RELEASE CANDIDATE, `v1.0.0-rc.1` since 2026-09-04; `v1.0.0` not yet tagged)
 
 **Theme:** Everything needed to build, test, and deploy a Holochain hApp from scratch.
 
@@ -32,7 +32,11 @@
 - **holochain-open-dev** — Community-standard patterns: Profiles zome, linked devices, file storage, notifications
 - **ADAM (coasys)** — AD4M perspectives, expression languages, cross-hApp linking
 - **Holo Hosting** — HTTP gateway setup, edge node configuration, Holo Node ISO, HolOS
+- **Flowsta**: The account and sign-in flow a hApp otherwise lacks. Raised on X on 2026-09-10; Flowsta also distributes this skill as a YourOwnAI add-on since 2026-10-09
 - **Unyt** — Holochain Foundation's P2P accounting and payment infrastructure; Alliance setup and configuration, Smart Agreements (RHAI scripting, three-layer template/agreement/RAVE architecture), transaction types (Pay, Request, Trade), inter-network and EVM bridging, agent onboarding via Joining Service REST API, Pricing Oracle integration, and deployment with `tauri-plugin-holochain`
+
+### Platforms
+- **Android and iOS builds**: One-command mobile packaging once the Holochain Tauri plugin is published. Raised on X by Paul d'Aoust on 2026-09-10 and again on 2026-10-13. Until then the skill keeps recommending Kangaroo for desktop, because the published Tauri plugins do not track 0.7
 
 ### Architecture improvements
 - Skill graph: parent orchestrator routing to sub-skills
@@ -74,4 +78,5 @@ Once both the PAI version and vanilla version are field-tested:
 | 0.1.1 | 2026-03-12 | Agent Skills Open Standard conformance, multi-platform README, testing plan |
 | 0.1.2 | 2026-05-15 | Version bump to Holochain 0.6.1 (hdk=0.6.1, hdi=0.7.1); references/wind-tunnel.md shipped ahead of schedule | <!-- legacy-ok: a release history row, not a pin -->
 | 0.2.0 | 2026-05-15 | Expanded progenitor pattern: full DnaProperties setup, bootstrap mode (`Option<AgentPubKey>`), integrity validation enforcement, is_progenitor hdk_extern, init() bootstrap, deploy-time injection via Kangaroo roles_settings; based on Requests & Offers implementation |
-| 1.0.0 | 2026-08-17 | First stable release. Holochain 0.7 only (hdk=0.7.0, hdi=0.8.0, holonix main-0.7). Repository restructured to references/ + assets/ + scripts/. Example hApp compiles and its Sweettest suite passes. Countersigning, scheduling, cryptography and warrants documented. Validator, version bumper and routing eval in CI. Community files added. Verified end to end by a second model producing code that compiled on first try |
+| 1.0.0-rc.1 | 2026-09-04 | First 1.0 release candidate (prerelease). Holochain 0.7 only (hdk=0.7.0, hdi=0.8.0, holonix main-0.7). Repository restructured to references/ + assets/ + scripts/. Example hApp compiles and its Sweettest suite passes. Countersigning, scheduling, cryptography and warrants documented. Validator, version bumper and routing eval in CI. Community files added. Verified end to end by a second model producing code that compiled on first try |
+| 1.0.0-rc.2 | unreleased | Second candidate, built from the rc.1 field reviews. See `CHANGELOG.md` |
