@@ -202,11 +202,65 @@ async fn validate_entry_on_create() {
     let (cell,) = app.into_tuple();
     let zome = cell.zome("my_coordinator");
 
-    // Test validation rejection
+    // Test validation rejection (assert the rejection itself, see the next section)
     let result: Result<ActionHash, _> = conductor.call_fallible(&zome, "create_my_entry", invalid_payload).await;
     assert!(result.is_err());
 }
 ```
+
+### Asserting That Validation Rejects Invalid Data
+
+A suite that only commits valid entries proves validation accepts good data, never that it refuses bad data. `assert!(result.is_err())` is not enough either: a missing capability, a deserialization failure or a wasm trap all make a call fail too. The example hApp's `Post` integrity rule is `validate_create_post` in `references/example-happ/dnas/forum/zomes/integrity/posts/src/post.rs`: a title that is empty after trimming returns `ValidateCallbackResult::Invalid("Post title must not be empty")`. The rule is pure, so it reads only the entry. The update path calls `validate_create_post` on the new entry as well, so one rule guards both.
+
+```rust
+use holochain::conductor::api::error::ConductorApiError;
+use holochain::conductor::CellError;
+use holochain::core::workflow::WorkflowError;
+
+#[tokio::test(flavor = "multi_thread")]
+async fn create_post_with_empty_title_is_rejected() {
+    let mut conductor = SweetConductor::standard().await;
+    let dna_path = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../workdir/forum.dna");
+    let dna_file = SweetDnaFile::from_bundle(&dna_path).await.unwrap();
+    let app = conductor.setup_app("test-app", &[dna_file]).await.unwrap();
+    let zome = app.cells()[0].zome("posts");
+
+    // A whitespace-only title is empty after trimming, so integrity validation rejects it.
+    let invalid_post = Post {
+        title: "   ".to_string(),
+        content: "Some content".to_string(),
+    };
+
+    let result: Result<Record, _> = conductor
+        .call_fallible(&zome, "create_post", invalid_post)
+        .await;
+
+    // The commit is refused by the author's own inline validation, which surfaces as
+    // `InvalidCommit` carrying the `Invalid(..)` message from the integrity zome. Matching
+    // this variant and message separates a validation rejection from any other failure.
+    match result {
+        Err(ConductorApiError::CellError(CellError::WorkflowError(workflow_error))) => {
+            match *workflow_error {
+                WorkflowError::SourceChainError(error) => {
+                    let reason = error.to_string();
+                    assert!(
+                        reason.starts_with("InvalidCommit error:"),
+                        "not a validation rejection: {reason}"
+                    );
+                    assert!(
+                        reason.contains("Post title must not be empty"),
+                        "unexpected rejection reason: {reason}"
+                    );
+                }
+                other => panic!("expected a source chain error, got {other:?}"),
+            }
+        }
+        other => panic!("expected a validation rejection, got {other:?}"),
+    }
+}
+```
+
+An author's commit runs app validation inline before it is flushed to the source chain, so a rejected entry fails the zome call itself, with no gossip and no `await_consistency`. The error nests as `ConductorApiError::CellError(CellError::WorkflowError(WorkflowError::SourceChainError(SourceChainError::InvalidCommit(reason))))`, and `reason` is `"Validation failed while committing: "` followed by the `Invalid` string. `SourceChainError` is not re-exported by the `holochain` crate, so the test matches down to `WorkflowError::SourceChainError(error)` and checks `error.to_string()`, which renders `InvalidCommit` as `"InvalidCommit error: ..."`. The prefix check says validation refused the entry, and the message check says which rule did. A missing dependency during inline validation renders as an `IncompleteCommit` error instead, so it cannot be mistaken for a rejection. Keep every fixture helper (such as `sample_post`) producing data that passes the rule, or the happy-path tests start failing for the wrong reason.
 
 ### SweetConductorConfig — Network Tuning
 
