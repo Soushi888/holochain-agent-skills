@@ -41,4 +41,6 @@ O05	how do I get people's old chain history to show up once everyone's moved to 
 R35	Encrypting a record that holds a photo fails with FrameOverflow 29937 > 8192, how do I store it encrypted?	references/cryptography.md
 R36	We shipped a patch release of our Kangaroo app and the new screens call zome functions that do not exist, why?	references/deployment.md
 R37	How do I run UpdateCoordinators on launch so a coordinator fix reaches users without wiping their data?	references/deployment.md
+R38	Our zomes are still on hdk 0.6.1, can you add a comments zome for me?	references/workflows/upgrade-holochain-0.7.md
+R39	The agent keeps calling HDK functions that do not exist, and I just noticed the project is on 0.6.	references/workflows/upgrade-holochain-0.7.md
 R40	A user lost their laptop; can they get their source chain back on a new machine with the same agent key?	references/migration.md
