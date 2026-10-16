@@ -49,25 +49,25 @@ Do not use bare `main`: it now tracks the 0.8 dev line.
 
 ```bash
 nix flake update && git add flake.* && nix develop
-holochain --version     # expect 0.7.0
+holochain --version     # expect 0.7.1
 ```
 
 Root `Cargo.toml`:
 
 ```toml
 [workspace.dependencies]
-hdi = "=0.8.0"
-hdk = "=0.7.0"
+hdi = "=0.8.1"
+hdk = "=0.7.1"
 ```
 
 If you have a `holochain` dev-dependency for Sweettest, its features changed:
 
 ```toml
-holochain = { version = "0.7.0", default-features = false, features = ["encryption", "wasmer-sys-cranelift"] }
+holochain = { version = "0.7.1", default-features = false, features = ["encryption", "wasmer-sys-cranelift"] }
 # was: features = ["sqlite-encrypted", "wasmer_sys", "transport-iroh"]   (legacy-ok)
 ```
 
-`package.json`: `@holochain/client` to `^0.21.0`, `@holochain/hc-spin` to `^0.700.0`.
+`package.json`: `@holochain/client` to `^0.21.1`, `@holochain/hc-spin` to `^0.700.0`.
 
 Then `cargo update` and `npm install`. Delete every sandbox and conductor data directory in the repo; 0.7 cannot read them and the failure is confusing rather than explicit.
 
@@ -178,3 +178,17 @@ Publish the new DNA hashes somewhere your users can see. The old network is not 
 | 6 Packaging | half a day, or open-ended |
 
 Port the smallest hApp first to build the vocabulary, then the larger ones.
+
+---
+
+## Already on 0.7.0: moving to 0.7.1
+
+0.7.1 (2026-10-14) is a patch release with breaking changes in the capability types. A fresh lockfile under an `=0.7.0` pin already pulls the 0.7.1 types, because `hdk =0.7.0` depends on `holochain_zome_types ^0.7.0`. So a project can start failing to compile without anyone touching a version.
+
+1. Re-pin: `hdk = "=0.7.1"`, `hdi = "=0.8.1"`, `holochain` 0.7.1, `@holochain/client` `^0.21.1`. Leave `@holochain/hc-spin` at `^0.700.0`. Then `cargo update -p hdk -p hdi` and `nix flake update holonix`.
+2. Rewrite every grant. `ZomeCallCapGrant { tag, access, functions }` becomes `CapGrant::new_zome_call_grant(tag, constraint, functions)`, and `CapAccess::{Unrestricted, Transferable, Assigned}` becomes `GrantConstraint::{..}`. Details and the full rename table: `access-control.md` (section 0.7.0 to 0.7.1).
+3. Grants already on a source chain must be re-issued in the new shape. Nothing migrates them.
+4. If you use direct signals, add a `Capability::DirectSignal` grant on the receiver. `Signal::AppDirect` also carries `from_agent` now.
+5. Other removals: `Entry::app_fancy` and `Entry::entry_type`; `Action::signer` (use `Action::author`); `ConductorError::CellDisabled` is now `CellNotRunning(cell_id, reason)`.
+6. Client: `@holochain/client` 0.21.1 changes `ChainOp` and `OpEntry` to the 0.7 msgpack encoding. See `client.md`.
+

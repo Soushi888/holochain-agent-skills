@@ -21,8 +21,8 @@ Entries marked **(verified)** were reproduced on Holochain 0.7.0 while building 
 | `feature wasmer_sys does not exist` | Renamed in 0.7 | `wasmer-sys-cranelift` |
 | `feature transport-iroh does not exist` | Removed; iroh is compiled in unconditionally | Drop it from the feature list |
 | Build fails looking for `perl` | A holochain build dependency needs it on PATH, usually surfacing only when building a Sweettest suite | Add `perl` to the `packages` list in `flake.nix` |
-| `non-exhaustive patterns: AdminRequest::DumpOpTimings { .. } not covered`, raised **inside the `holochain` crate itself** **(verified)** | Version skew: the `holochain` crate is pinned to a `0.7.0-rc` while `holochain_conductor_api` resolves to stable `0.7.0`, which added the `DumpOpTimings` variant the rc does not handle. `hc scaffold` 0.700.0-rc emits exactly this combination | Pin `holochain` to stable `0.7.0` in `[workspace.dependencies]`, then `cargo update -p holochain`. Never leave the scaffolder's rc pins in place |
-| `no method named agent found for &OpActivity<..>`, or `missing field agent` on `OpActivity::CreateAgent` **(verified)** | **Scaffolder output does not compile against stable 0.7.0.** `hc scaffold` 0.700.0-rc generates `ref create @ OpActivity::CreateAgent { ref action }` plus `create.agent()`, which matches the rc crates. Stable hdi 0.8.0 carries `agent` as a plain field, as the official upgrade guide documents | Match the field directly: `OpActivity::CreateAgent { agent, action } => { ... }` and drop the `create.agent()` block. `assets/templates/integrity-lib.rs` is already corrected |
+| `non-exhaustive patterns: AdminRequest::DumpOpTimings { .. } not covered`, raised **inside the `holochain` crate itself** **(verified)** | Version skew: the `holochain` crate is pinned to a `0.7.0-rc` while `holochain_conductor_api` resolves to stable `0.7.0`, which added the `DumpOpTimings` variant the rc does not handle. `hc scaffold` 0.700.0-rc emits exactly this combination | Pin `holochain` to stable `0.7.1` in `[workspace.dependencies]`, then `cargo update -p holochain`. Never leave the scaffolder's rc pins in place |
+| `no method named agent found for &OpActivity<..>`, or `missing field agent` on `OpActivity::CreateAgent` **(verified)** | **Scaffolder output does not compile against stable 0.7.1.** `hc scaffold` 0.700.0-rc generates `ref create @ OpActivity::CreateAgent { ref action }` plus `create.agent()`, which matches the rc crates. Stable hdi 0.8.1 carries `agent` as a plain field, as the official upgrade guide documents | Match the field directly: `OpActivity::CreateAgent { agent, action } => { ... }` and drop the `create.agent()` block. `assets/templates/integrity-lib.rs` is already corrected |
 
 ---
 
@@ -44,7 +44,7 @@ nix run github:holochain/scaffolding/v0.700.0 -- web-app my-app
 cargo install holochain_scaffolding_cli --version 0.700.0
 ```
 
-Stable v0.700.0 emits `holonix?ref=main-0.7`, `nodejs_24`, and stable pins `hdi 0.8.0` / `hdk 0.7.0` / `holochain 0.7.0`, and its `validate()` codegen compiles against those crates.
+Stable v0.700.0 emits `holonix?ref=main-0.7`, `nodejs_24`, and stable pins `hdi 0.8.1` / `hdk 0.7.1` / `holochain 0.7.1`, and its `validate()` codegen compiles against those crates.
 
 ### Applies to every scaffolder version
 
@@ -61,7 +61,7 @@ Fixed in stable v0.700.0. If you are on stable and see one of these, something e
 |---|---|---|
 | Scaffolded `flake.nix` says `ref=main` **(verified)** | The rc emits `main`, and holonix `main` tracks the 0.8 dev line | Change to `ref=main-0.7` after scaffolding, then `nix flake update` |
 | Scaffolded `flake.nix` says `nodejs_22` **(verified)** | Same stale template | Change to `nodejs_24` | <!-- legacy-ok -->
-| Scaffolded `Cargo.toml` pins `-rc` crates **(verified)** | The scaffolding CLI is itself an rc and pins its own generation | Pin stable: `hdi = "=0.8.0"`, `hdk = "=0.7.0"`, `holochain = "0.7.0"` |
+| Scaffolded `Cargo.toml` pins `-rc` crates **(verified)** | The scaffolding CLI is itself an rc and pins its own generation | Pin stable: `hdi = "=0.8.1"`, `hdk = "=0.7.1"`, `holochain = "0.7.1"` |
 
 ---
 
@@ -97,6 +97,18 @@ Fixed in stable v0.700.0. If you are on stable and see one of these, something e
 | `Conductor::install_app_with_manifest` not found | Moved behind a feature in 0.7 | Enable the `test_utils` feature |
 | `mock_network` not found | Removed from `holochain_p2p` in 0.7 | Use `test_utils` directly |
 | Inline zome tests fail to compile | Inline zome definitions are no longer embedded in `DnaDef`; closures live on `DnaFile`, and `InlineZome::uuid` became `InlineZome::hash` | Rework against the 0.7 inline zome API |
+
+---
+
+## Capability grants and client versions (0.7.1)
+
+| Error / symptom | Cause | Fix |
+|---|---|---|
+| `error[E0422]` naming `ZomeCallCapGrant` as not found in scope **(verified)** | The type was renamed in 0.7.1 to `CapGrant`, and the grant is now `{ tag, constraint, capability }`. This breaks a project still pinned `=0.7.0` as soon as the lockfile is regenerated, because `hdk =0.7.0` depends on `holochain_zome_types ^0.7.0` and resolves the 0.7.1 types | Build the grant with `CapGrant::new_zome_call_grant(tag, constraint, functions)`. See `access-control.md` |
+| `error[E0599]` saying there is no variant `Unrestricted` (or `Transferable`, `Assigned`) on `CapAccess` **(verified)** | In 0.7.1 `CapAccess` is a different enum (`ChainAuthor` / `RemoteAgent`); the three-tier enum is now `GrantConstraint` | Use `GrantConstraint::Unrestricted`, `::Transferable { secret }` or `::Assigned { secret, assignees }` |
+| Remote calls to a function you granted under 0.7.0 stop being authorised after moving to 0.7.1 | Grants committed under 0.7.0 use the old shape and must be re-issued (the 0.7.1 CHANGELOG says so; the exact conductor message is not recorded here) | Create the grants again with the new shape; `init()` only runs once per cell, so use a coordinator call or a fresh cell |
+| Direct signals never reach the receiver | Receiving a direct signal needs an explicit `Capability::DirectSignal` grant; a zome-call grant does not cover it | `CapGrant::new_direct_signal_grant`, or `grantDirectSignalCapability` from the client |
+| Client calls fail or types do not match against a 0.7 conductor after `npm install @holochain/client` | `@holochain/client` 0.22.x targets an unreleased Holochain and renames wire types, so it is not for 0.7. The mismatch is the client line, not your code | Run `npm ls @holochain/client`. If it shows 0.22.x, install `@holochain/client@^0.21.1` and clear the lockfile entry. See `client.md` <!-- legacy-ok --> |
 
 ---
 

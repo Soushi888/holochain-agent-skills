@@ -407,11 +407,11 @@ pub fn recv_remote_signal(signal: SerializedBytes) -> ExternResult<()> {
 pub fn init(_: ()) -> ExternResult<InitCallbackResult> {
     let mut functions = HashSet::new();
     functions.insert((zome_info()?.name, "recv_remote_signal".into()));
-    create_cap_grant(ZomeCallCapGrant {
-        tag: "remote_signals".into(),
-        access: CapAccess::Unrestricted,
-        functions: GrantedFunctions::Listed(functions),
-    })?;
+    create_cap_grant(CapGrant::new_zome_call_grant(
+        "remote_signals".into(),
+        GrantConstraint::Unrestricted,
+        GrantedFunctions::Listed(functions),
+    ))?;
     Ok(InitCallbackResult::Pass)
 }
 ```

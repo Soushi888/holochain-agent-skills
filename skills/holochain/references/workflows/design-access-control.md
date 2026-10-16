@@ -24,10 +24,11 @@ Questions to answer:
 | Caller scope | Pattern | Where |
 |--------------|---------|-------|
 | Same agent (UI) | No grant | N/A |
-| Any agent | `CapAccess::Unrestricted` in `init()` | `init()` callback |
-| Named agent(s) | `CapAccess::Assigned` | On-demand grant creation |
-| Token holder | `CapAccess::Transferable` | On-demand grant creation |
+| Any agent | `GrantConstraint::Unrestricted` in `init()` | `init()` callback |
+| Named agent(s) | `GrantConstraint::Assigned` | On-demand grant creation |
+| Token holder | `GrantConstraint::Transferable` | On-demand grant creation |
 | Admin-only | Progenitor check in coordinator | Coordinator function body |
+| Receive direct signals (`SendDirectSignal`) | `CapGrant::new_direct_signal_grant` with a `GrantConstraint` | `init()` callback, or `GrantDirectSignalCapability` from the admin API |
 
 ## Step 3: Design Cap Grants
 
@@ -37,7 +38,7 @@ For each function requiring a grant:
 Function: recv_remote_signal
 Grantor: self (init)
 Grantee: all
-Access: Unrestricted
+Constraint: Unrestricted
 Grant timing: init() on first run
 ```
 
@@ -45,7 +46,7 @@ Grant timing: init() on first run
 Function: approve_member
 Grantor: progenitor cell
 Grantee: specific delegate agent
-Access: Assigned { secret, assignees: [delegate_pubkey] }
+Constraint: Assigned { secret, assignees: [delegate_pubkey] }
 Grant timing: progenitor creates grant on delegation
 Secret distribution: progenitor sends via private entry to delegate
 ```
@@ -63,11 +64,11 @@ pub fn init(_: ()) -> ExternResult<InitCallbackResult> {
     functions.insert((zome_info()?.name, "recv_remote_signal".into()));
     // functions.insert((zome_info()?.name, "another_open_fn".into()));
 
-    create_cap_grant(ZomeCallCapGrant {
-        tag: "open_functions".into(),
-        access: CapAccess::Unrestricted,
-        functions: GrantedFunctions::Listed(functions),
-    })?;
+    create_cap_grant(CapGrant::new_zome_call_grant(
+        "open_functions".into(),
+        GrantConstraint::Unrestricted,
+        GrantedFunctions::Listed(functions),
+    ))?;
 
     Ok(InitCallbackResult::Pass)
 }
