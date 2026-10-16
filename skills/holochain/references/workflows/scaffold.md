@@ -106,8 +106,8 @@ Check `Cargo.toml` at the root uses exact version pins:
 
 ```toml
 [workspace.dependencies]
-hdi = "=0.8.0"
-hdk = "=0.7.0"
+hdi = "=0.8.1"
+hdk = "=0.7.1"
 serde = { version = "1", features = ["derive"] }
 ```
 
@@ -165,7 +165,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dev-dependencies]
-holochain = { version = "=0.7.0", default-features = false, features = ["encryption", "wasmer-sys-cranelift", "test_utils"] }
+holochain = { version = "=0.7.1", default-features = false, features = ["encryption", "wasmer-sys-cranelift", "test_utils"] }
 tokio     = { version = "1", features = ["full"] }
 ```
 

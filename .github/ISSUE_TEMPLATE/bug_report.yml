@@ -22,7 +22,7 @@ body:
     attributes:
       label: Holochain / hdk / hdi versions in use
       description: The exact versions your project is using, not just "latest".
-      placeholder: "holochain 0.7.0, hdk = \"=0.7.0\", hdi = \"=0.8.0\""
+      placeholder: "holochain 0.7.1, hdk = \"=0.7.1\", hdi = \"=0.8.1\""
     validations:
       required: true
 

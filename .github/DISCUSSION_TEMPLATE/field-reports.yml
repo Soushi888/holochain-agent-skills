@@ -76,7 +76,7 @@ body:
     id: holochain-versions
     attributes:
       label: Holochain / hdk / hdi versions in the project
-      placeholder: "holochain 0.7.0, hdk = \"=0.7.0\", hdi = \"=0.8.0\""
+      placeholder: "holochain 0.7.1, hdk = \"=0.7.1\", hdi = \"=0.8.1\""
 
   - type: dropdown
     id: project-kind

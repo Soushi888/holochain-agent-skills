@@ -18,7 +18,7 @@ compatibility: >
 metadata:
   author: soushi888
   version: "1.0.0-rc.1"
-  holochain-versions: "hdk=0.7.0, hdi=0.8.0, holonix ref=main-0.7"
+  holochain-versions: "hdk=0.7.1, hdi=0.8.1, holonix ref=main-0.7"
 ---
 
 # Holochain Development Skill
@@ -82,8 +82,8 @@ Load on demand based on task:
 ## Quick Reference
 
 ```
-Versions (current stable):  hdk = "=0.7.0"   hdi = "=0.8.0"   holonix ref=main-0.7
-Client / tooling:           @holochain/client 0.21.0   hc-spin 0.700.0   nodejs_24
+Versions (current stable):  hdk = "=0.7.1"   hdi = "=0.8.1"   holonix ref=main-0.7
+Client / tooling:           @holochain/client 0.21.1   hc-spin 0.700.0   nodejs_24
 Dev commands:  nix develop  |  hc sandbox clean  |  cargo test
 Build zomes:   RUSTFLAGS='--cfg getrandom_backend="custom"' cargo build --release --target wasm32-unknown-unknown
 Scaffold:      hc scaffold entry-type MyEntry  |  hc scaffold link-type AgentToMyEntry
@@ -91,13 +91,13 @@ Scaffold:      hc scaffold entry-type MyEntry  |  hc scaffold link-type AgentToM
 
 ### Toolchain currency
 
-Verified against live registries and git refs on **2026-08-20**. Re-verify before trusting these past a Holochain minor release.
+Verified against live registries and git refs on **2026-10-15**. Re-verify before trusting these past a Holochain minor release.
 
 | Component | Current | Source |
 |---|---|---|
-| `hdk` / `hdi` / `holochain` | 0.7.0 / 0.8.0 / 0.7.0 | crates.io |
-| `@holochain/client` | 0.21.0 | npm |
-| `@holochain/hc-spin` | 0.700.0 | npm |
+| `hdk` / `hdi` / `holochain` | 0.7.1 / 0.8.1 / 0.7.1 (released 2026-10-14) | crates.io, holochain CHANGELOG on branch `main-0.7` |
+| `@holochain/client` | 0.21.1 (2026-10-15). **Not 0.22.x**: 0.22.0 is built against an unreleased Holochain, see `references/client.md` | npm, release notes on github.com/holochain/holochain-client-js |
+| `@holochain/hc-spin` | 0.700.0 (`latest`; `0.700.1-rc.0` exists only on `next`) | npm dist-tags |
 | `holochain_scaffolding_cli` | 0.700.0 (stable, 2026-07-31) | crates.io / scaffolding `v0.700.0` |
 | holonix | branch `main-0.7` | github.com/holochain/holonix |
 | kangaroo-electron | branch `main-0.7` | github.com/holochain/kangaroo-electron |

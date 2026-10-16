@@ -2,7 +2,7 @@
 
 Optional. The framework-neutral client surface is in `../client.md`; nothing here is required to use Holochain from TypeScript.
 
-Assumes Svelte 5 runes and `@holochain/client` 0.21.0.
+Assumes Svelte 5 runes and `@holochain/client` 0.21.1.
 
 ---
 

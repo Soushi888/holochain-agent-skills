@@ -30,7 +30,7 @@ A secondary goal is enabling the wider Holochain community to benefit from AI-as
 | FR-01 | Skill must cover Architecture domain | Must | `references/architecture.md` loads on request; covers coordinator/integrity split, DNA structure, Nix, progenitor, multi-DNA, private entries |
 | FR-02 | Skill must cover Design domain | Must | `references/workflows/design-data-model.md` guides entry/link type design with output artifacts |
 | FR-03 | Skill must cover Scaffold domain | Must | `references/scaffolding.md` + `references/workflows/scaffold.md` cover: Holonix setup, Nix flake, hc CLI, `hc scaffold` commands, new project workflow, add-domain-to-existing workflow |
-| FR-04 | Scaffold workflow follows official Holochain documentation | Must | Commands and patterns reference developer.holochain.org; version pins current (hdk=0.7.0, hdi=0.8.0) |
+| FR-04 | Scaffold workflow follows official Holochain documentation | Must | Commands and patterns reference developer.holochain.org; version pins current (hdk=0.7.1, hdi=0.8.1) |
 | FR-05 | Skill must cover Implementation domain | Must | `references/patterns.md` covers entry types, link types, CRUD, cross-zome calls, signals, validation, HDK 0.7 API |
 | FR-06 | Skill must cover Testing domain | Must | `references/testing.md` covers Sweettest setup, two-agent scenarios, `await_consistency`, update/delete patterns |
 | FR-07 | Skill must cover Deployment domain | Must | `references/deployment.md` + `references/workflows/package-and-deploy.md` cover Kangaroo-Electron packaging, CI/CD, versioning |
@@ -47,7 +47,7 @@ A secondary goal is enabling the wider Holochain community to benefit from AI-as
 | ID | Category | Requirement | Target |
 |----|----------|-------------|--------|
 | NFR-01 | Portability | Works with zero PAI infrastructure | Verified by install in fresh Claude Code with no `~/.claude/PAI/` |
-| NFR-02 | Currency | Version pins match current stable Holochain | hdk=0.7.0, hdi=0.8.0, holonix ref=main-0.7 at release |
+| NFR-02 | Currency | Version pins match current stable Holochain | hdk=0.7.1, hdi=0.8.1, holonix ref=main-0.7 at release |
 | NFR-03 | Completeness | All 6 domains have content | No stub files in v1 release |
 | NFR-04 | Accuracy | Code examples compile and run correctly | Examples tested against real hAppenings/Nondominium codebase |
 

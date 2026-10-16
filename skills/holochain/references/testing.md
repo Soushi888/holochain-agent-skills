@@ -63,7 +63,7 @@
 
 ```toml
 [dev-dependencies]
-holochain = { version = "=0.7.0", default-features = false, features = ["encryption", "wasmer-sys-cranelift", "test_utils"] }
+holochain = { version = "=0.7.1", default-features = false, features = ["encryption", "wasmer-sys-cranelift", "test_utils"] }
 tokio = { version = "1", features = ["full"] }
 ```
 
@@ -527,7 +527,7 @@ For full end-to-end tests that drive the UI against a real Holochain backend —
 {
   "devDependencies": {
     "@playwright/test": "^1.40.0",
-    "@holochain/client": "^0.21.0"
+    "@holochain/client": "^0.21.1"
   }
 }
 ```

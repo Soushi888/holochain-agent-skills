@@ -22,7 +22,7 @@ body:
     attributes:
       label: Version the skill currently claims
       description: What does the skill currently say (check `SKILL.md` frontmatter and its Toolchain currency table)?
-      placeholder: "0.7.0"
+      placeholder: "0.7.1"
     validations:
       required: true
 

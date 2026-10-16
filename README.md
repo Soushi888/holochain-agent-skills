@@ -131,7 +131,7 @@ can run it unattended.
 | **Test** | Sweettest two-agent scenarios, `await_consistency`, update and delete patterns, inline zomes |
 | **Deploy** | Kangaroo-Electron packaging, `.webhapp` bundling, CI/CD, versioning, auto-update |
 
-**Version pins:** `hdk = "=0.7.0"` | `hdi = "=0.8.0"` | `holonix ref=main-0.7`
+**Version pins:** `hdk = "=0.7.1"` | `hdi = "=0.8.1"` | `holonix ref=main-0.7`
 
 This release targets Holochain 0.7 only, and carries no 0.6 API content by design. On a 0.6
 project it will actively mislead you. Use the `v0.2.0` tag for 0.6, or the skill's

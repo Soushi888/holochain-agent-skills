@@ -2,7 +2,7 @@
 
 A membrane is the check that runs when an agent joins a DNA's network, before that agent can write anything. It is the only mechanism Holochain gives you for "not everyone may participate", and it is enforced by validation like everything else.
 
-Types read from `holochain_integrity_types 0.7.0` (`src/genesis.rs`, `src/action.rs`), `hdi 0.8.0` (`src/map_extern.rs`, `src/flat_op/flat_op_record.rs`), `hdk_derive 0.7.0`, and the published `@holochain/client 0.21.0` type declarations.
+Types read from `holochain_integrity_types 0.7.0` (`src/genesis.rs`, `src/action.rs`), `hdi 0.8.0` (`src/map_extern.rs`, `src/flat_op/flat_op_record.rs`), `hdk_derive 0.7.0`, and the published `@holochain/client 0.21.1` type declarations.
 
 ## The three places a membrane is enforced
 
