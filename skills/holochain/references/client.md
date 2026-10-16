@@ -3,8 +3,12 @@
 ## Package Version
 
 ```
-@holochain/client   ^0.21.0   (Holochain 0.7 / hdk 0.7.x / hdi 0.8.x)
+@holochain/client   ^0.21.1   (Holochain 0.7 / hdk 0.7.x / hdi 0.8.x)
 ```
+
+Holochain 0.7 apps use the `@holochain/client` 0.21.x line, and the current release on that line is 0.21.1 (paired with holochain 0.7.1). Always install it with an explicit range (`^0.21.1`), never `@latest`.
+
+**Do not install 0.22.x for a 0.7 conductor.** `@holochain/client` 0.22.0 (npm, 2026-10-07) is built against a Holochain that has no tagged release yet: its release notes say the wire types come from a commit "not in a tagged release yet", and it renames wire types (`InstallAppPayload` where 0.21.x has `InstallAppRequest`). <!-- legacy-ok --> Check what you have with `npm ls @holochain/client`; a 0.22.x result in a 0.7 project is the mismatch.
 
 Holochain 0.7 changed the client surface. If you are porting from 0.20.x, read [Migrating from 0.20.x](#migrating-from-020x) first.
 
@@ -133,6 +137,23 @@ await admin.authorizeSigningCredentials(cellId, {
 
 This is what Playwright E2E setups and test harnesses use. See `testing.md`.
 
+### Granting a zome-call capability
+
+From 0.7.1 the grant carries a `constraint` (who may use it) and a nested `grant` holding the function list. The old `access` field is gone:
+
+```typescript
+await admin.grantZomeCallCapability({
+  cell_id: cellId,
+  cap_grant: {
+    tag: "my_grant",
+    constraint: { type: "unrestricted" },
+    grant: { functions: { type: "listed", value: [["my_zome", "my_fn"]] } },
+  },
+});
+```
+
+`listCapabilityGrants` returns `CapGrantInfo` rows whose `cap_grant` is a `DesensitizedCapGrant { tag, constraint, capability }`, with `capability` either `{ type: "zome_call", value: { functions } }` or `{ type: "direct_signal" }`. Shapes read from the `@holochain/client` 0.21.1 declarations (`api/admin/types.d.ts`, `hdk/capabilities.d.ts`).
+
 ### Inspection
 
 ```typescript
@@ -185,7 +206,7 @@ Holochain 0.7 split every action into a `header` holding the fields all actions 
 
 ```typescript
 import type { SignedActionHashed, ActionHash, AgentPubKey, Timestamp } from "@holochain/client";
-import { encodeHashToBase64 } from "@holochain/client";
+import { encodeHashToBase64, SignalType } from "@holochain/client";
 
 // Common fields live under .header
 const author = encodeHashToBase64(action.hashed.content.header.author);
@@ -210,7 +231,7 @@ export type MyAppSignal =
 
 ```typescript
 client.on("signal", (signal) => {
-  if (signal.type !== "App") return;   // ignore system signals
+  if (signal.type !== SignalType.App) return;   // ignore system and direct signals
 
   const { zome_name, payload } = signal.value;
   if (zome_name === "my_zome") handleMyZomeSignal(payload as MyAppSignal);
@@ -229,6 +250,14 @@ function handleMyZomeSignal(payload: MyAppSignal) {
 ```
 
 The payload shape mirrors the Rust `Signal` enum, which uses `#[serde(tag = "type")]`. See `patterns.md` for the emitting side.
+
+`SignalType` (imported from `@holochain/client`) has three members in 0.21.1: `App = "app"`, `AppDirect = "app_direct"` and `System = "system"`. An `AppDirect` signal carries `{ cell_id, from_agent, signal: Uint8Array }`, and the payload is opaque bytes you decode yourself. Sending and receiving direct signals needs capability grants (see `access-control.md`): `client.sendDirectSignal({ dna_hash, agents, signal, cap_secret? })` sends, `client.grantDirectSignalCapability({ cell_id, tag, constraint })` lets this cell receive, and the admin socket has the same `grantDirectSignalCapability` for any cell. `constraint` is `{ type: "unrestricted" }`, `{ type: "transferable", value: { secret } }` or `{ type: "assigned", value: { secret, assignees } }`.
+
+---
+
+## Chain ops (0.21.x change)
+
+`ChainOp` and `OpEntry` follow the 0.7 msgpack encoding as of `@holochain/client` 0.21.1 (the 0.21.1-rc.0 notes mark this breaking). Newtype op variants such as `AgentActivity`, `DeleteEntry` and `CreateLink` carry a bare `SignedAction` rather than a one-element tuple, `OpEntry` unit variants are plain strings, and `CreateEntry` carries `[SignedAction, OpEntry]`. Read ops through `getChainOpType`, `getChainOpAction`, `getChainOpEntry` and `getChainOpSignature` rather than indexing the tuple. Code that destructured the 0.21.0 shape must be updated.
 
 ---
 
