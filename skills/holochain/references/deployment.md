@@ -27,12 +27,12 @@ Users receive a single installer (`.exe` / `.dmg` / `.AppImage`) with no Holocha
 
 | Branch | Holochain version | Status | Use when |
 |--------|-------------------|--------|----------|
-| `main` | 0.7.0 | Development | Tracks the latest line; moves without warning |
-| `main-0.7` | 0.7.0 | **Recommended** | New production projects |
+| `main` | 0.7.0 (unchanged since 2026-07-31) | Development | Tracks the latest line; moves without warning |
+| `main-0.7` | 0.7.1-rc.2 (since 2026-10-14) | **Recommended** | New production projects |
 | `main-0.6` | 0.6.3 | Legacy | Existing 0.6.x apps not yet ported |
 | `main-0.5` | 0.5.x | Archived | Old apps only |
 
-**Default choice: `main-0.7`** unless you have a specific reason to use another.
+**Default choice: `main-0.7`** unless you have a specific reason to use another. The version column moves without a Kangaroo release: read `holochainVersion` in the branch's `kangaroo.config.ts` before trusting it, and expect `main-0.7` to reach the stable 0.7.1 conductor in a later commit.
 
 Pin to a versioned branch rather than `main`. `main` follows whatever core is current, so a clone taken a month apart can produce two different conductors.
 
