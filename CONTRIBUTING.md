@@ -49,7 +49,7 @@ If the validator flags a new file you added as an orphan, that means it is not r
 
 ## Bumping version pins
 
-Holochain is sensitive to minor version changes, so this skill pins exact versions (`hdk = "=0.7.0"`, not `hdk = "0.7"`). **Never hand-edit a version pin.** Use `scripts/bump-versions.sh`, which rewrites every occurrence across the skill consistently:
+Holochain is sensitive to minor version changes, so this skill pins exact versions (`hdk = "=0.7.1"`, not `hdk = "0.7"`). **Never hand-edit a version pin.** Use `scripts/bump-versions.sh`, which rewrites every occurrence across the skill consistently:
 
 ```bash
 scripts/bump-versions.sh --hdk X.Y.Z --hdi X.Y.Z --holonix main-X.Y \

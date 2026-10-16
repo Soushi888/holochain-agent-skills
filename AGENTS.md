@@ -46,8 +46,8 @@ most harnesses read skills once, at startup.
 
 ### What you just installed
 
-A skill for Holochain hApp development pinned to **Holochain 0.7**: HDK 0.7.0,
-HDI 0.8.0, holonix `main-0.7`. It covers coordinator and integrity zome
+A skill for Holochain hApp development pinned to **Holochain 0.7**: HDK 0.7.1,
+HDI 0.8.1, holonix `main-0.7`. It covers coordinator and integrity zome
 architecture, entry and link types, validation, capability grants, membranes,
 Sweettest, the TypeScript client, and packaging. If the project you are
 working in uses Holochain 0.6 or earlier, this skill will actively mislead

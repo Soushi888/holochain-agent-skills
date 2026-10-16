@@ -198,8 +198,8 @@ members = ["dnas/*/zomes/coordinator/*", "dnas/*/zomes/integrity/*"]
 resolver = "2"
 
 [workspace.dependencies]
-hdi = "=0.8.0"
-hdk = "=0.7.0"
+hdi = "=0.8.1"
+hdk = "=0.7.1"
 holochain_serialized_bytes = "*"
 serde = "1.0"
 

@@ -12,8 +12,8 @@ Confirm your hApp targets a supported Kangaroo-Electron branch and that your con
 
 **Check your Cargo.toml versions:**
 ```toml
-hdk = "=0.7.0"
-hdi = "=0.8.0"
+hdk = "=0.7.1"
+hdi = "=0.8.1"
 ```
 
 **Check for iroh transport (required for 0.6+):**

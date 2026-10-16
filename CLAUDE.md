@@ -70,10 +70,10 @@ Context files are loaded **on demand**, not all at once. When editing `SKILL.md`
 ## Version Pins (update all occurrences when bumping)
 
 ```
-hdk = "=0.7.0"
-hdi = "=0.8.0"
+hdk = "=0.7.1"
+hdi = "=0.8.1"
 holonix ref=main-0.7
-@holochain/client 0.21.0
+@holochain/client 0.21.1
 @holochain/hc-spin 0.700.0
 nodejs_24
 ```
