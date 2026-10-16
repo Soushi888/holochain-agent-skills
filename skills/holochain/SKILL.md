@@ -37,6 +37,24 @@ Trigger conditions — any of these means the skill should be loaded before codi
 
 When proactively invoked: load `references/architecture.md` + `references/patterns.md`, run the **ReviewZome** checklist against any files being modified, surface issues before implementation begins.
 
+## Version Check First
+
+This skill teaches **Holochain 0.7 only**: the `hdk` 0.7 and `hdi` 0.8 lines, holonix `main-0.7`. Every API shape in it is wrong on another line, and an agent that writes 0.7 code into a 0.6 project, or 0.6 code from memory into a 0.7 one, produces calls that do not exist. So before writing or reviewing code in an existing project, read the project's own pins:
+
+```bash
+grep -rhE '^(hdk|hdi) *=' Cargo.toml dnas/*/zomes/*/*/Cargo.toml 2>/dev/null | sort -u
+grep -o 'holonix?ref=[^"]*' flake.nix
+```
+
+| The project pins | Do this |
+|---|---|
+| `hdk` 0.7.x, `hdi` 0.8.x, holonix `main-0.7` | Proceed with this skill |
+| `hdk` 0.6.x or older | Stop before writing code. Tell the user this skill's API shapes will not compile there, and offer the **UpgradeHolochain07** workflow, or the 0.6-era skill at tag `v0.2.0` if they are staying on 0.6 |
+| `hdk` 0.8 or 0.9 dev builds, holonix `main` | Say the skill predates that line, and verify every API against the project's own crate sources before using it |
+| A new project | 0.7, as the Scaffold workflows set it up |
+
+Say which line you found in your first reply, and record it where the next session will read it (the agent instructions file the project already has, AGENTS.md or CLAUDE.md: "Holochain 0.7, holochain skill `<metadata.version>`"), so a later session does not rediscover it by writing broken code first.
+
 ---
 
 ## Workflow Routing
@@ -49,7 +67,7 @@ When proactively invoked: load `references/architecture.md` + `references/patter
 | **ManualScaffold** | project files, scaffold without CLI, manual scaffold, by hand, AI creates files, no hc scaffold, scaffold in session | `references/workflows/manual-scaffold.md` |
 | **ImplementZome** | implement zome, create zome, scaffold zome, write zome, full zome, CRUD zome, coordinator and integrity crates | `references/workflows/implement-zome.md` |
 | **DesignAccessControl** | design access control, who can call, allowed to call, cap grant design, capability grants | `references/workflows/design-access-control.md` |
-| **UpgradeHolochain07** | upgrade to 0.7, port from 0.6, migrate hApp, holochain 0.7 upgrade, upgrade holochain version, bring up to date, move to the latest holochain, hdi upgrade | `references/workflows/upgrade-holochain-0.7.md` |
+| **UpgradeHolochain07** | upgrade to 0.7, port from 0.6, still on 0.6, project is on 0.6, hdk 0.6, older holochain, wrong holochain version, migrate hApp, holochain 0.7 upgrade, upgrade holochain version, bring up to date, move to the latest holochain, hdi upgrade | `references/workflows/upgrade-holochain-0.7.md` |
 | **PackageAndDeploy** | deploy, package, distribute, distribution, kangaroo, installer, desktop app, webhapp | `references/workflows/package-and-deploy.md` |
 
 ## Context Files
