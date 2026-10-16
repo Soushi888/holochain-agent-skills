@@ -4,7 +4,7 @@ use posts_integrity::*;
 
 pub async fn sample_post(conductor: &SweetConductor, zome: &SweetZome) -> Post {
     Post {
-        title: Default::default(),
+        title: "A valid title".to_string(),
         content: Default::default(),
     }
 }

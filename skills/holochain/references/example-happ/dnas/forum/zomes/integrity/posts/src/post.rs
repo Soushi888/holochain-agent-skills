@@ -9,9 +9,14 @@ pub struct Post {
 
 pub fn validate_create_post(
     _action: TypedAction<EntryCreationData>,
-    _post: Post,
+    post: Post,
 ) -> ExternResult<ValidateCallbackResult> {
-    // TODO: add the appropriate validation rules
+    // Pure and deterministic: the verdict depends only on the entry itself.
+    if post.title.trim().is_empty() {
+        return Ok(ValidateCallbackResult::Invalid(
+            "Post title must not be empty".to_string(),
+        ));
+    }
     Ok(ValidateCallbackResult::Valid)
 }
 
