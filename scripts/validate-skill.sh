@@ -347,6 +347,14 @@ check_only_version pins 'nodejs_[0-9]+' "^$EXPECT_NODE\$" \
     "every nodejs pin reads $EXPECT_NODE"
 check_only_version pins '@holochain/client[^0-9]{0,12}[0-9]+\.[0-9]+' "$EXPECT_CLIENT" \
     "every @holochain/client pin reads $EXPECT_CLIENT.x"
+# Exact hdk/hdi pins in either Cargo form: `hdk = "=X"` and the inline table
+# `hdk = { version = "=X", features = [...] }`. The named-value checks below only
+# saw the first form, so a countersigning snippet kept `=0.7.0` through the 0.7.1
+# bump with the gate green (rc.2 review, 2026-10-15).
+check_only_version pins 'hdk[[:space:]]*=[[:space:]]*(\{[^}]*version[[:space:]]*=[[:space:]]*)?"=[0-9]+\.[0-9]+\.[0-9]+' "\"=$EXPECT_HDK\$" \
+    "every exact hdk pin reads =$EXPECT_HDK"
+check_only_version pins 'hdi[[:space:]]*=[[:space:]]*(\{[^}]*version[[:space:]]*=[[:space:]]*)?"=[0-9]+\.[0-9]+\.[0-9]+' "\"=$EXPECT_HDI\$" \
+    "every exact hdi pin reads =$EXPECT_HDI"
 
 check_absent pins 'hdk = "=0\.6' 'no superseded hdk 0.6.x pin'
 check_absent pins 'hdi = "=0\.7' 'no superseded hdi 0.7.x pin'
