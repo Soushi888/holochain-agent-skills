@@ -229,8 +229,8 @@ fi
 # ---------------------------------------------------------------------------
 section "Version pin consistency"
 
-EXPECT_HDK="0.7.0"
-EXPECT_HDI="0.8.0"
+EXPECT_HDK="0.7.1"
+EXPECT_HDI="0.8.1"
 EXPECT_HOLONIX="main-0.7"
 EXPECT_NODE="nodejs_24"
 EXPECT_CLIENT="0.21"
@@ -401,6 +401,17 @@ check_absent_in_code api07 'webrtc_config'            'webrtc_config conductor c
 check_absent_in_code api07 'db_sync_strategy'         'db_sync_strategy (0.7: db_sync_level)'
 check_absent_in_code api07 'chc_url'                  'chc_url conductor config (removed in 0.7)'
 check_absent_in_code api07 'ActionBuilderCommon'      'ActionBuilderCommon (removed in 0.7)'
+
+# Removed in Holochain 0.7.1. A fresh lockfile under an `=0.7.0` pin already
+# resolves the 0.7.1 types, so these names stop compiling without any pin change.
+# Grants are now CapGrant { tag, constraint, capability }, built with
+# CapGrant::new_zome_call_grant(tag, constraint, functions).
+check_absent_in_code api071 'ZomeCallCapGrant'        'ZomeCallCapGrant (0.7.1: CapGrant, built with CapGrant::new_zome_call_grant)'
+check_absent_in_code api071 'CapAccess::\(Unrestricted\|Transferable\|Assigned\)' 'CapAccess::Unrestricted/Transferable/Assigned (0.7.1: GrantConstraint::..)'
+check_absent_in_code api071 'functions: GrantedFunctions::' 'functions: GrantedFunctions:: in a grant struct (0.7.1: pass GrantedFunctions to CapGrant::new_zome_call_grant)'
+check_absent_in_code api071 'DesensitizedZomeCallCapGrant' 'DesensitizedZomeCallCapGrant (0.7.1: DesensitizedCapGrant)'
+check_absent_in_code api071 'CapAccessInfo'             'CapAccessInfo (0.7.1: GrantConstraintInfo)'
+check_absent_in_code api071 'app_fancy'                 'Entry::app_fancy (removed in 0.7.1)'
 
 # Names that still exist in 0.7 but are called with the wrong shape. A blocklist
 # cannot check arity, so it blocks the call form instead. Each of these shipped
