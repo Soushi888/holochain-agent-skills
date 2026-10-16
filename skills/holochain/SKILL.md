@@ -39,15 +39,27 @@ When proactively invoked: load `references/architecture.md` + `references/patter
 
 ## Version Check First
 
-This skill teaches **Holochain 0.7 only**: the `hdk` 0.7 and `hdi` 0.8 lines, holonix `main-0.7`. Every API shape in it is wrong on another line, and an agent that writes 0.7 code into a 0.6 project, or 0.6 code from memory into a 0.7 one, produces calls that do not exist. So before writing or reviewing code in an existing project, read the project's own pins:
+This skill teaches **Holochain 0.7 only**: the `hdk` 0.7 and `hdi` 0.8 lines, holonix `main-0.7`. Every API shape in it is wrong on another line, and an agent that writes 0.7 code into a 0.6 project, or 0.6 code from memory into a 0.7 one, produces calls that do not exist. So before writing or reviewing code in an existing project, find the versions the project actually builds with. The lockfile is the authority, because a manifest pin can be a workspace reference or a range, and because `hdk = "=0.7.0"` with a fresh lockfile already resolves the 0.7.1 type crates:
 
 ```bash
-grep -rhE '^(hdk|hdi) *=' Cargo.toml dnas/*/zomes/*/*/Cargo.toml 2>/dev/null | sort -u
+grep -A1 -E '^name = "(hdk|hdi|holochain_integrity_types)"$' Cargo.lock
 grep -o 'holonix?ref=[^"]*' flake.nix
 ```
 
-| The project pins | Do this |
+With no `Cargo.lock`, fall back to every manifest, workspace tables included: `grep -rn --include=Cargo.toml -E '^(hdk|hdi)\b|dependencies\.(hdk|hdi)\]' .`
+
+| What the project resolves | Do this |
 |---|---|
+| `hdk` 0.7.1+, `hdi` 0.8.1+, `holochain_integrity_types` 0.7.1+ | Proceed with this skill |
+| `hdk` 0.7.0, or `holochain_integrity_types` 0.7.0 | The capability grant API differs from what this skill teaches. Follow "Already on 0.7.0: moving to 0.7.1" in the **UpgradeHolochain07** workflow first, or say plainly that grant code from this skill will not compile there |
+| `hdk` 0.6.x or older | Stop before writing code. Tell the user this skill's API shapes will not compile there, and offer the **UpgradeHolochain07** workflow, or the 0.6-era skill at tag `v0.2.0` if they are staying on 0.6 |
+| `hdk` 0.8 or 0.9 dev builds, holonix `main` | Say the skill predates that line, and verify every API against the project's own crate sources before using it |
+| Nothing found, or versions that disagree across crates | Do not proceed on a guess. Show the user what you found and ask which line the project targets |
+| A new project | The current 0.7 line, as the Scaffold workflows set it up |
+
+Say which line you found in your first reply, and offer to record it where the next session will read it (the agent instructions file the project already has, AGENTS.md or CLAUDE.md: "Holochain 0.7.x, holochain skill `<metadata.version>`"), so a later session does not rediscover it by writing broken code first.
+
+---|---|
 | `hdk` 0.7.x, `hdi` 0.8.x, holonix `main-0.7` | Proceed with this skill |
 | `hdk` 0.6.x or older | Stop before writing code. Tell the user this skill's API shapes will not compile there, and offer the **UpgradeHolochain07** workflow, or the 0.6-era skill at tag `v0.2.0` if they are staying on 0.6 |
 | `hdk` 0.8 or 0.9 dev builds, holonix `main` | Say the skill predates that line, and verify every API against the project's own crate sources before using it |
