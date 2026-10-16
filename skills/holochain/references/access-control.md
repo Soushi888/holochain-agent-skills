@@ -79,7 +79,7 @@ create_cap_grant(CapGrant::new_direct_signal_grant(
 ))?;
 ```
 
-Receiving a direct signal on an app or admin interface needs an explicit `Capability::DirectSignal` grant. A zome-call grant does not cover it. From outside the conductor, the admin API has `GrantDirectSignalCapability` (`admin.grantDirectSignalCapability` in `@holochain/client`), and `GrantZomeCallCapability` takes `{ cell_id, cap_grant: { tag, constraint, grant: { functions } } }`.
+A cell receives direct signals only if it holds an explicit `Capability::DirectSignal` grant, even for signals the authoring agent sends itself. A zome-call grant does not cover it. From outside the conductor, the admin API has `GrantDirectSignalCapability` (`admin.grantDirectSignalCapability` in `@holochain/client`), and `GrantZomeCallCapability` takes `{ cell_id, cap_grant: { tag, constraint, grant: { functions } } }`.
 
 ---
 
@@ -146,4 +146,4 @@ Grantor side:                              Grantee side:
 | `DesensitizedZomeCallCapGrant` | `DesensitizedCapGrant` |
 | `CapAccessInfo` | `GrantConstraintInfo` |
 
-Grants already committed to a chain under 0.7.0 must be re-issued: create them again with the new shape (and `delete_cap_grant` the old ones). `CapGrantEntry` is an alias of `CapGrant`, so `create_cap_grant` takes either spelling.
+Grants already committed to a chain under 0.7.0 must be re-issued: create them again with the new shape. The 0.7.1 changelog says only that the old grants cannot be read by 0.7.1; whether `delete_cap_grant` can still remove them is unverified. `CapGrantEntry` is an alias of `CapGrant`, so `create_cap_grant` takes either spelling.

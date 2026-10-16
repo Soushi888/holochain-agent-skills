@@ -11,6 +11,7 @@ Assumes Svelte 5 runes and `@holochain/client` 0.21.1.
 ```typescript
 // stores/myEntry.svelte.ts
 import type { AppWebsocket } from "@holochain/client";
+import { SignalType } from "@holochain/client";
 import type { MyEntry, MyAppSignal } from "$lib/types";
 
 export class MyEntryStore {
@@ -20,7 +21,7 @@ export class MyEntryStore {
 
   constructor(private client: AppWebsocket) {
     client.on("signal", (signal) => {
-      if (signal.type !== "App") return;
+      if (signal.type !== SignalType.App) return;
       const { zome_name, payload } = signal.value;
       if (zome_name === "my_zome") this.handleSignal(payload as MyAppSignal);
     });

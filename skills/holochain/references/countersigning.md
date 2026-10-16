@@ -8,7 +8,7 @@ It sits behind a Cargo feature that is **off by default**:
 
 ```toml
 # in your coordinator zome
-hdk = { version = "=0.7.0", features = ["unstable-countersigning"] }
+hdk = { version = "=0.7.1", features = ["unstable-countersigning"] }
 ```
 
 The conductor must be built with it too. `holochain 0.7.0` declares:
