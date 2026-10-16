@@ -104,7 +104,7 @@ Only the secretbox variant returns `None` when the ciphertext does not open: `x_
 
 ## Size limit: about 8 KiB per keystore request
 
-Every function on this page hands its payload to lair, and every lair request travels down a framed channel that refuses any frame over 8 KiB (`const MAX_FRAME: usize = 1024 * 8` in `lair_keystore_api 0.7.1`, `src/sodium_secretstream.rs`). That holds for the in-process keystore too: it talks to its server over the same framed stream. The frame also carries the request envelope, so the plaintext you can encrypt in one call is smaller than 8192 bytes. Over the limit, the call fails at runtime, not at compile time. Encrypt functions and the two box decrypt functions return a host error:
+Every function on this page except `sign_ephemeral` (which signs in-process) and `verify_signature` (which verifies locally) hands its payload to lair, and every lair request travels down a framed channel that refuses any frame over 8 KiB (`const MAX_FRAME: usize = 1024 * 8` in `lair_keystore_api 0.7.1`, `src/sodium_secretstream.rs`). That holds for the in-process keystore too: it talks to its server over the same framed stream. The frame also carries the request envelope, so the plaintext you can encrypt in one call is smaller than 8192 bytes. Over the limit, the call fails at runtime, not at compile time. Encrypt functions and the two box decrypt functions return a host error:
 
 ```
 WasmError { module_path: "holochain::core::ribosome::host_fn::x_salsa20_poly1305_encrypt", line: 36, error: Host("{\"error\":\"FrameOverflow\",\"message\":\"29937 > 8192\"}") }
