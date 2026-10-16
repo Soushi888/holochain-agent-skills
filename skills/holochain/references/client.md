@@ -206,7 +206,7 @@ Holochain 0.7 split every action into a `header` holding the fields all actions 
 
 ```typescript
 import type { SignedActionHashed, ActionHash, AgentPubKey, Timestamp } from "@holochain/client";
-import { encodeHashToBase64, SignalType } from "@holochain/client";
+import { encodeHashToBase64 } from "@holochain/client";
 
 // Common fields live under .header
 const author = encodeHashToBase64(action.hashed.content.header.author);
@@ -230,6 +230,8 @@ export type MyAppSignal =
 ## Signal Subscription
 
 ```typescript
+import { SignalType } from "@holochain/client";
+
 client.on("signal", (signal) => {
   if (signal.type !== SignalType.App) return;   // ignore system and direct signals
 

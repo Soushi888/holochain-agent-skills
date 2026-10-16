@@ -44,7 +44,7 @@ nix run github:holochain/scaffolding/v0.700.0 -- web-app my-app
 cargo install holochain_scaffolding_cli --version 0.700.0
 ```
 
-Stable v0.700.0 emits `holonix?ref=main-0.7`, `nodejs_24`, and stable pins `hdi 0.8.1` / `hdk 0.7.1` / `holochain 0.7.1`, and its `validate()` codegen compiles against those crates.
+Stable v0.700.0 emits `holonix?ref=main-0.7`, `nodejs_24`, and stable pins `hdi 0.8.0` / `hdk 0.7.0` / `holochain 0.7.0` (it was released on 2026-07-31, before 0.7.1), and its `validate()` codegen compiles against those crates. Re-pin to `=0.8.1` / `=0.7.1` / `0.7.1` and `@holochain/client` `^0.21.1` after scaffolding: see Step 4 of the Scaffold workflow.
 
 ### Applies to every scaffolder version
 
@@ -116,7 +116,7 @@ Fixed in stable v0.700.0. If you are on stable and see one of these, something e
 
 | Symptom | Cause | Fix |
 |---|---|---|
-| Kangaroo build uses the wrong conductor | Cloned the default branch | `git checkout main-0.7`. `main-0.7` pins holochain 0.7.0; `main-0.6` pins 0.6.3 |
+| Kangaroo build uses the wrong conductor | Cloned the default branch | `git checkout main-0.7`. `main-0.7` bundles holochain 0.7.1-rc.2 as of 2026-10-14 (read `holochainVersion` in its `kangaroo.config.ts`); `main-0.6` pins 0.6.3 |
 | App will not start after a version bump | Kangaroo isolates data folders on minor and major bumps by design | Expected. Only patch bumps share a data folder |
 | Windows MSI build fails | Special characters in `PRODUCT_NAME` | Alphanumerics and hyphens only |
 
