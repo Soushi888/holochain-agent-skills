@@ -6,7 +6,22 @@ use posts_integrity::*;
 // Called the first time a zome call is made to the cell containing this zome
 #[hdk_extern]
 pub fn init() -> ExternResult<InitCallbackResult> {
+    // Holochain 0.7.1 capability grant: who may call (`constraint`) and what they may call (`capability`).
+    // `recv_remote_signal` is only reachable by other agents through this grant.
+    let mut functions = HashSet::new();
+    functions.insert((zome_info()?.name, "recv_remote_signal".into()));
+    create_cap_grant(CapGrant::new_zome_call_grant(
+        "remote_signals".into(),
+        GrantConstraint::Unrestricted,
+        GrantedFunctions::Listed(functions),
+    ))?;
     Ok(InitCallbackResult::Pass)
+}
+
+// Receives `send_remote_signal` from other agents and forwards it to this agent's UI.
+#[hdk_extern]
+pub fn recv_remote_signal(signal: SerializedBytes) -> ExternResult<()> {
+    emit_signal(signal)
 }
 
 // Don't modify this enum if you want the scaffolding tool to generate appropriate signals for your entries and links
