@@ -216,6 +216,7 @@ A suite that only commits valid entries proves validation accepts good data, nev
 use holochain::conductor::api::error::ConductorApiError;
 use holochain::conductor::CellError;
 use holochain::core::workflow::WorkflowError;
+use holochain::core::SourceChainError;
 
 #[tokio::test(flavor = "multi_thread")]
 async fn create_post_with_empty_title_is_rejected() {
@@ -236,23 +237,20 @@ async fn create_post_with_empty_title_is_rejected() {
         .await;
 
     // The commit is refused by the author's own inline validation, which surfaces as
-    // `InvalidCommit` carrying the `Invalid(..)` message from the integrity zome. Matching
-    // this variant and message separates a validation rejection from any other failure.
+    // `SourceChainError::InvalidCommit` carrying the `Invalid(..)` message from the
+    // integrity zome. Matching the variant and the message separates a validation
+    // rejection from any other failure.
+    assert_rejected_by_validation(result, "Post title must not be empty");
+}
+
+fn assert_rejected_by_validation(result: Result<Record, ConductorApiError>, rule: &str) {
     match result {
         Err(ConductorApiError::CellError(CellError::WorkflowError(workflow_error))) => {
             match *workflow_error {
-                WorkflowError::SourceChainError(error) => {
-                    let reason = error.to_string();
-                    assert!(
-                        reason.starts_with("InvalidCommit error:"),
-                        "not a validation rejection: {reason}"
-                    );
-                    assert!(
-                        reason.contains("Post title must not be empty"),
-                        "unexpected rejection reason: {reason}"
-                    );
+                WorkflowError::SourceChainError(SourceChainError::InvalidCommit(reason)) => {
+                    assert!(reason.contains(rule), "unexpected rejection reason: {reason}");
                 }
-                other => panic!("expected a source chain error, got {other:?}"),
+                other => panic!("expected an InvalidCommit, got {other:?}"),
             }
         }
         other => panic!("expected a validation rejection, got {other:?}"),
@@ -260,7 +258,7 @@ async fn create_post_with_empty_title_is_rejected() {
 }
 ```
 
-An author's commit runs app validation inline before it is flushed to the source chain, so a rejected entry fails the zome call itself, with no gossip and no `await_consistency`. The error nests as `ConductorApiError::CellError(CellError::WorkflowError(WorkflowError::SourceChainError(SourceChainError::InvalidCommit(reason))))`, and `reason` is `"Validation failed while committing: "` followed by the `Invalid` string. `SourceChainError` is not re-exported by the `holochain` crate, so the test matches down to `WorkflowError::SourceChainError(error)` and checks `error.to_string()`, which renders `InvalidCommit` as `"InvalidCommit error: ..."`. The prefix check says validation refused the entry, and the message check says which rule did. A missing dependency during inline validation renders as an `IncompleteCommit` error instead, so it cannot be mistaken for a rejection. Keep every fixture helper (such as `sample_post`) producing data that passes the rule, or the happy-path tests start failing for the wrong reason.
+An author's commit runs app validation inline before it is flushed to the source chain, so a rejected entry fails the zome call itself, with no gossip and no `await_consistency`. The error nests as `ConductorApiError::CellError(CellError::WorkflowError(WorkflowError::SourceChainError(SourceChainError::InvalidCommit(reason))))`, and `reason` is `"Validation failed while committing: "` followed by the `Invalid` string. `holochain::core` re-exports `SourceChainError` (`core/sys_validate.rs`), so the helper matches the `InvalidCommit` variant itself and checks that its reason carries the integrity zome's message: the variant says validation refused the entry, and the message says which rule did. The example's `update_post_with_empty_title_is_rejected` uses the same helper on the update path. A missing dependency during inline validation renders as an `IncompleteCommit` error instead, so it cannot be mistaken for a rejection. Keep every fixture helper (such as `sample_post`) producing data that passes the rule, or the happy-path tests start failing for the wrong reason.
 
 ### SweetConductorConfig — Network Tuning
 
