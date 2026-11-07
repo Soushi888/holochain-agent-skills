@@ -416,6 +416,7 @@ check_absent_in_code pins '"[\^~]\{0,1\}0\.700\.0-rc' 'no rc-era pin in shipped 
 section "Holochain 0.7 forbidden APIs"
 
 check_absent_in_code api07 'EntryCreationAction'      'EntryCreationAction (0.7: TypedAction<EntryCreationData>)'
+check_absent_in_code api07 'Action::\(Create\|Update\|Delete\|CreateLink\|DeleteLink\)(' 'Action::Create(..) and its siblings (0.7: Action is { header, data }; match ActionData::Create(..) on &action.data)'
 check_absent_in_code api07 'FlatOp::StoreEntry'       'FlatOp::StoreEntry (0.7: FlatOp::CreateEntry)'
 check_absent_in_code api07 'FlatOp::StoreRecord'      'FlatOp::StoreRecord (0.7: FlatOp::CreateRecord)'
 check_absent_in_code api07 'RegisterUpdate'           'FlatOp::RegisterUpdate (0.7: FlatOp::Update)'

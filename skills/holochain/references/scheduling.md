@@ -1,6 +1,6 @@
 # Scheduled Functions
 
-Running work on a timer inside a coordinator zome. Every shape below is taken from the shipped `hdk 0.7.0` and `holochain_zome_types 0.7.0` sources, not from recall.
+Running work on a timer inside a coordinator zome. Every shape below is taken from the shipped `hdk 0.7.1` and `holochain_zome_types 0.7.1` sources, not from recall.
 
 ## The API
 

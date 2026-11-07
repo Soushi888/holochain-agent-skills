@@ -50,7 +50,7 @@ impl From<MyDomainError> for WasmError {
 
 All public zome functions return `ExternResult<T>`. The `?` operator works throughout because:
 1. `From<MyDomainError> for WasmError` is implemented (above)
-2. `WasmError` implements `Into<ExternResult>` via HDK
+2. `ExternResult<T>` is an alias for `Result<T, WasmError>`, so `?` converts `MyDomainError` through that `From` impl
 
 ```rust
 pub fn update_my_entry(
@@ -152,5 +152,5 @@ thiserror = { workspace = true }
 In workspace `Cargo.toml`:
 ```toml
 [workspace.dependencies]
-thiserror = "1"
+thiserror = "2"
 ```
