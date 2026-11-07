@@ -9,10 +9,10 @@ Wind-Tunnel is Holochain's load testing framework. It applies user-defined load 
 > | Ref | Pins | Holochain generation |
 > |---|---|---|
 > | tag `v0.7.1` (2026-07-21, latest release) | `hdk 0.6.3`, `hdi 0.7.3`, `holochain_client 0.8.3`, `kitsune2 0.4.1` | **0.6** | <!-- legacy-ok -->
-> | branch `main` | `hdk 0.7.0`, `hdi 0.8.0`, `holochain_client 0.9.0`, `kitsune2 0.5.0` | **0.7** |
+> | branch `main` | `hdk 0.7.0`, `hdi 0.8.0`, `holochain_client 0.9.0`, `kitsune2 0.5.2` | **0.7** |
 >
 > The "0.7.1" in the tag name is Wind Tunnel's version, not Holochain's. Checking out that tag against a 0.7 hApp gives you a dependency conflict, not a load test. Track `main` until a release ships with 0.7 pins.
-**Used for:** Performance regression CI (every merge to holochain main), soak testing, benchmarking
+**Used for:** Scheduled performance runs (the wind-tunnel repo's own `nomad-canonical` workflows run the canonical scenarios weekly on a Nomad cluster; Holochain's CI does not call it), soak testing, benchmarking
 
 ---
 
@@ -42,7 +42,8 @@ Wind-Tunnel is Holochain's load testing framework. It applies user-defined load 
 Add to `Cargo.toml`:
 ```toml
 [dev-dependencies]
-holochain_wind_tunnel_runner = "0.6"
+# No published release targets Holochain 0.7: 0.6.0, 0.7.0 and 0.7.1 all depend on holochain_types 0.6. Track main.
+holochain_wind_tunnel_runner = { git = "https://github.com/holochain/wind-tunnel", branch = "main" }
 ```
 
 ---
@@ -112,13 +113,13 @@ ctx.runner_context().executor().execute_in_place(async {
 // Setup helpers (call in agent_setup)
 start_conductor_and_configure_urls(ctx)?;       // start conductor + bind ports
 install_app(ctx, happ_path!("my_happ"), &"my_happ".to_string())?;
-use_installed_app(ctx, app_id)?;                // connect to already-installed app
+use_installed_app(ctx, &"my_role".to_string())?;  // connect to already-installed app (takes a role name)
 
 // Teardown helpers (call in agent_teardown)
 uninstall_app(ctx, None).ok();                  // None = use current app_id
 
 // Peer coordination
-try_wait_for_min_agents(ctx, 3, Duration::from_secs(30))?;
+try_wait_for_min_agents(ctx, Duration::from_secs(30))?;  // minimum count from MIN_AGENTS env var, default 2
 try_wait_until_full_arc_peer_discovered(ctx)?;
 get_peer_list_randomized(ctx)?;  // -> Vec<AgentPubKey>
 
@@ -340,7 +341,7 @@ A shared `build.rs` (`build = "../scenario_build.rs"`) packages zomes into DNAs/
 
 ## Pre-Built Scenarios (Reference)
 
-25 scenarios in the wind-tunnel repo cover common Holochain performance patterns:
+27 scenarios in the wind-tunnel repo cover common Holochain performance patterns:
 
 | Scenario | Tests |
 |----------|-------|

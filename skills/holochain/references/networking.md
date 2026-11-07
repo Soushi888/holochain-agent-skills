@@ -15,7 +15,7 @@ The whole transport layer was replaced.
 
 Kitsune2 is on the `0.5` line. `holochain_p2p 0.7.1` requires `^0.5.1` for `kitsune2`, `kitsune2_api`, `kitsune2_core`, `kitsune2_transport_iroh` and `kitsune2_bootstrap_srv`, and a fresh lockfile resolves `0.5.2` (the example hApp's). The 0.7.0 line pinned `0.5.0`.
 
-Client-side, the per-connection `is_webrtc` flag became `is_direct`. See `client.md`.
+Client-side, the per-connection flag is `is_direct`. It replaced `is_webrtc` in `kitsune2_api 0.4` (the Holochain 0.6.1 line), so only code written against 0.6.0 still reads `is_webrtc`. See `client.md`.
 
 ## Minimal conductor config
 
@@ -59,7 +59,7 @@ Serialized under `network:` in `conductor-config.yaml`, `snake_case`, unknown fi
 | `request_timeout_s` | `u64` | `60` | Request/response roundtrip timeout, in seconds |
 | `target_arc_factor` | `u32` | `1` | Multiplier applied to arc-size hints from Kitsune2 |
 | `report` | `ReportConfig` | `None` | Kitsune2 reporting output |
-| `advanced` | `Option<JSON>` | none | Raw Kitsune2 module config. Every field above is sugar over a key in here |
+| `advanced` | `Option<JSON>` | none | Raw Kitsune2 module config. `bootstrap_url`, `relay_url` and `request_timeout_s` are merged into it at startup; the other fields above are not |
 
 ### "Default" here means the Rust `Default` impl, not a serde default
 
@@ -74,19 +74,18 @@ So a `network:` block is all-or-nothing on those two. Every other field in the t
 
 `dev-test-bootstrap2.holochain.org` is named "dev-test" for a reason, and the default relay is an iroh **canary** host. Both are fine for development and neither is a production commitment by anyone. A hApp you distribute should point at infrastructure you or your community controls. See "Running your own bootstrap server" below.
 
-### `request_timeout_s` sets three timeouts, not one
+### `request_timeout_s` sets two timeouts, not one
 
-Setting it derives two more values, per the field's own documentation:
+Setting it derives one more value, in `NetworkConfig::to_k2_config`:
 
 ```
 request_timeout_s              = 60   (what you set)
-single transport message       = 30   floor(1/2 of request_timeout_s)
-direct-connection attempt      = 22   floor(3/8 of request_timeout_s), before falling back to relay
+direct-connection attempt      = 22   floor(3/8 of request_timeout_s), irohTransport.connectTimeoutS, before falling back to relay
 ```
 
-So halving the request timeout also halves how long a peer waits before giving up on a direct connection and paying the relay's latency. Tune it as one number with three consequences.
+So halving the request timeout also halves how long a peer waits before giving up on a direct connection and paying the relay's latency. Tune it as one number with two consequences.
 
-The 0.7 source still calls the third value the "webrtc connection" timeout in its doc comment. That is leftover wording from the tx5 era. The mechanism is iroh's direct-path attempt before relay fallback.
+The 0.7 doc comment on the field still lists a third value, a "single transport message" timeout at floor(1/2), and calls the second the "webrtc connection" timeout. Both are leftover wording from the tx5 era: 0.6 wrote the 1/2 value to `tx5Transport.timeoutS`, and 0.7's `to_k2_config` sets no such key. The mechanism behind the 3/8 value is iroh's direct-path attempt before relay fallback.
 
 ### `target_arc_factor` and leecher nodes
 
@@ -99,16 +98,16 @@ A zero-arc node still reads from the DHT, but it stores nothing on behalf of the
 ```yaml
 network:
   report:
-    type: json_lines
-    days_retained: 7
-    fetched_op_interval_s: 60
+    json_lines:
+      days_retained: 7
+      fetched_op_interval_s: 60
 ```
 
-Two variants only: `None` (the default, no reporting) and `JsonLines { days_retained, fetched_op_interval_s }`. Useful when diagnosing gossip behaviour over hours rather than seconds.
+`ReportConfig` is an externally tagged enum (no `type:` key): the variant name is the key, and its fields nest under it. Two variants only: `None` (the default, no reporting) and `JsonLines { days_retained, fetched_op_interval_s }`. Useful when diagnosing gossip behaviour over hours rather than seconds.
 
 ### `advanced`
 
-Direct Kitsune2 module configuration, as raw JSON. The named fields above are merged into it at startup: `bootstrap_url` becomes the `serverUrl` key of the `core_bootstrap` module, and so on. Anything you set directly in `advanced` for the same key is what the named field overwrites, so do not set both.
+Direct Kitsune2 module configuration, as raw JSON. The named fields above are merged into it at startup: `bootstrap_url` becomes the `serverUrl` key of the `coreBootstrap` module, `relay_url` becomes `irohTransport.relayUrl`, and `request_timeout_s` sets `irohTransport.connectTimeoutS`. Anything you set directly in `advanced` for the same key is what the named field overwrites, so do not set both.
 
 Use it only when you know which Kitsune2 module you are configuring. Module names seen in the 0.7 sources include `k2Gossip` (with keys like `initiateIntervalMs`) and the bootstrap module's `serverUrl`.
 
@@ -118,10 +117,10 @@ Use it only when you know which Kitsune2 module you are configuring. Module name
 
 ## Running your own bootstrap server
 
-The server is a standalone binary, `kitsune2-bootstrap-srv`, shipped by the `kitsune2_bootstrap_srv` crate (`0.5.0` for the 0.7 line).
+The server is a standalone binary, `kitsune2-bootstrap-srv`, shipped by the `kitsune2_bootstrap_srv` crate (`0.5.1` or later for the 0.7.1 line, which requires `^0.5.1`). The holonix `main-0.7` default devShell already ships it, built from kitsune2 `v0.5.2`, so inside `nix develop` no install is needed.
 
 ```
-cargo install kitsune2_bootstrap_srv --version 0.5.0 --locked
+cargo install kitsune2_bootstrap_srv --version 0.5.2 --locked
 kitsune2-bootstrap-srv --production --listen 0.0.0.0:443 --tls-cert cert.pem --tls-key key.pem
 ```
 
@@ -139,7 +138,7 @@ It runs in a **testing** configuration by default, with deliberately light resou
 
 A bootstrap server holds nothing but agent info: it is how peers find each other, not where data lives. Losing it partitions new joiners, not existing peers who already know each other.
 
-The relay is a separate concern. Holochain uses iroh's relay protocol, so any iroh relay will do, including one you run yourself.
+The relay is a separate protocol, but not necessarily a separate server: `kitsune2_bootstrap_srv` 0.5 builds with its default `iroh-relay` feature and serves an iroh relay on the `/relay` route of the same listener (the library's `no_relay_server` config turns it off). Holochain uses iroh's relay protocol, so any iroh relay will do, including that one.
 
 ## Other conductor config fields worth knowing
 
