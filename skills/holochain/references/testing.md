@@ -33,7 +33,7 @@
 
 - **Sweettest** (`holochain::sweettest`) — Rust-native, in-process conductor. Official Holochain team recommendation. Run with `cargo test`.
 - **Playwright** + **`@holochain/client`** — Browser automation against a real conductor. No mocks.
-- **Wind-Tunnel** (`holochain_wind_tunnel_runner`) — Rust load testing. Separate repo. Measures latency, throughput, DHT sync lag. Used for Holochain core CI performance regression. See `wind-tunnel.md`.
+- **Wind-Tunnel** (`holochain_wind_tunnel_runner`) — Rust load testing. Separate repo. Measures latency, throughput, DHT sync lag. The wind-tunnel repo runs its canonical scenarios on a weekly schedule on a Nomad cluster; Holochain's own CI does not invoke it. See `wind-tunnel.md`.
 
 **Note on Tryorama:** The scaffolding tool no longer generates it, and Holochain no longer maintains it. It now lives at [holochain-open-dev/tryorama](https://github.com/holochain-open-dev/tryorama) as a community project. This skill targets Sweettest only. If you are maintaining a legacy suite, the community fork tracks 0.7; everything else here assumes you are not.
 
@@ -172,17 +172,19 @@ let agents: Vec<AgentPubKey> = SweetAgents::get(conductor.keystore(), 5).await;
 ### Inline Zomes (Quick Isolated Tests, No WASM Compile)
 
 ```rust
-let mut zomes = SweetInlineZomes::new();
-zomes.function("create_thing", |api, input: MyInput| {
-    let hash = api.create(CreateInput::new(
-        EntryDefLocation::app(0, 0),
-        EntryVisibility::Public,
-        Entry::app(SerializedBytes::try_from(input)?)?,
-        ChainTopOrdering::default(),
-    ))?;
-    Ok(hash)
-});
-let dna = SweetDnaFile::unique_from_inline_zomes(zomes).await.unwrap();
+// new(entry_defs, num_link_types); `.function` consumes and returns the builder
+let zomes = SweetInlineZomes::new(vec![EntryDef::default_from_id("thing")], 0)
+    .function("create_thing", |api, input: MyInput| {
+        let hash = api.create(CreateInput::new(
+            InlineZomeSet::get_entry_location(&api, EntryDefIndex(0)),
+            EntryVisibility::Public,
+            Entry::app(input.try_into().unwrap()).unwrap(),
+            ChainTopOrdering::default(),
+        ))?;
+        Ok(hash)
+    });
+// Returns (DnaFile, Vec<IntegrityZome>, Vec<CoordinatorZome>), not a Result
+let (dna, _, _) = SweetDnaFile::unique_from_inline_zomes(zomes).await;
 ```
 
 ### Single-Conductor Pattern (Validation and Unit Tests)
@@ -190,7 +192,10 @@ let dna = SweetDnaFile::unique_from_inline_zomes(zomes).await.unwrap();
 ```rust
 #[tokio::test(flavor = "multi_thread")]
 async fn validate_entry_on_create() {
-    let conductor = SweetConductor::from_config(SweetConductorConfig::standard()).await;
+    let mut conductor = SweetConductor::from_config_rendezvous(
+        SweetConductorConfig::standard(),
+        SweetLocalRendezvous::new().await,
+    ).await;
     let dna = SweetDnaFile::from_bundle(Path::new("workdir/my.dna")).await.unwrap();
     let app = conductor.setup_app("my-app", &[dna]).await.unwrap();
     let (cell,) = app.into_tuple();
@@ -207,22 +212,24 @@ async fn validate_entry_on_create() {
 Most tests use `SweetConductorConfig::standard()`. Override for stress tests or timing-sensitive scenarios:
 
 ```rust
-let mut config = SweetConductorConfig::standard();
-
-// Tune gossip frequency (default: 1000ms)
-config.tune_network_config(|net| {
-    net.gossip_initiate_interval_ms = 500;        // More frequent gossip
-    net.gossip_round_timeout_ms = 20_000;          // Longer timeout
-    net.gossip_min_initiate_interval_ms = 500;
-    net.gossip_initiate_jitter_ms = 50;
-});
-
-// Tune validation and countersigning
-config.tune_conductor(|tune| {
-    tune.sys_validation_retry_delay = Some(Duration::from_secs(3));
-    tune.countersigning_resolution_retry_delay = Some(Duration::from_secs(5));
-    tune.countersigning_resolution_retry_limit = Some(10);
-});
+// `tune_network_config` and `tune_conductor` take `self` and return `Self`.
+// NetworkConfig has no gossip fields: its `with_gossip_*` builders write k2Gossip keys into `advanced`.
+let config = SweetConductorConfig::standard()
+    // Tune gossip frequency (standard(): 1000ms interval, 10_000ms round timeout)
+    .tune_network_config(|net| {
+        *net = net
+            .clone()
+            .with_gossip_initiate_interval_ms(500)      // More frequent gossip
+            .with_gossip_round_timeout_ms(20_000)       // Longer timeout
+            .with_gossip_min_initiate_interval_ms(500)
+            .with_gossip_initiate_jitter_ms(50);
+    })
+    // Tune validation and countersigning
+    .tune_conductor(|tune| {
+        tune.sys_validation_retry_delay = Some(Duration::from_secs(3));
+        tune.countersigning_resolution_retry_delay = Some(Duration::from_secs(5));
+        tune.countersigning_resolution_retry_limit = Some(10);
+    });
 
 let conductor = SweetConductor::from_config_rendezvous(
     config,
@@ -342,7 +349,7 @@ let cloned = conductor.create_clone_cell(
 
 // Restart conductor
 conductor.shutdown().await;
-conductor.startup(false).await;
+conductor.startup().await;
 ```
 
 ---
@@ -352,10 +359,9 @@ conductor.startup(false).await;
 Use these for debugging or asserting internal state without going through zome calls:
 
 ```rust
-// Access authored and DHT databases directly
-let authored_db = cell.authored_db();
-let dht_db = cell.dht_db();
-let dht_db_from_conductor = conductor.get_dht_db(cell.dna_hash()).unwrap();
+// Access the DHT store directly (0.7 has no separate authored_db / dht_db accessors)
+let dht_store = cell.dht_store();
+let dht_store_from_conductor = conductor.get_dht_store(cell.dna_hash()).unwrap();
 
 // Read the full source chain for an agent
 let chain = conductor
@@ -363,7 +369,7 @@ let chain = conductor
     .await;
 
 // Get invalid / rejected ops (validates your validation logic)
-let invalid_ops = conductor.get_invalid_integrated_ops(&dht_db).await.unwrap();
+let invalid_ops = conductor.get_invalid_integrated_ops(cell.dna_hash()).await.unwrap();
 assert!(invalid_ops.is_empty(), "Found invalid ops: {invalid_ops:?}");
 
 // Persist databases to disk before shutdown (for debugging)
@@ -399,7 +405,7 @@ check_consistency([&alice_cell, &bob_cell]).await.unwrap();
 let rendezvous = SweetLocalRendezvous::new_raw().await;
 rendezvous.drop_sig().await;   // kill signal channel
 // ... test behavior during outage ...
-rendezvous.start_sig().await;  // restore
+rendezvous.start_relay().await;  // restore
 ```
 
 ---
@@ -410,12 +416,13 @@ Assert that ops are fully integrated without using `await_consistency`:
 
 ```rust
 // All ops in the DHT for this DNA are integrated
-let integrated = conductor.all_ops_integrated(cell.dna_hash()).unwrap();
+let integrated = conductor.all_ops_integrated(cell.dna_hash()).await.unwrap();
 assert!(integrated, "Ops not yet integrated");
 
 // All ops authored by a specific agent are integrated
 let author_integrated = conductor
     .all_ops_of_author_integrated(cell.dna_hash(), cell.agent_pubkey())
+    .await
     .unwrap();
 ```
 
@@ -444,14 +451,13 @@ The full pattern separates integrity (validation) from coordinator (business log
 
 ```rust
 use holochain::sweettest::{SweetInlineZomes, SweetDnaFile};
-use holochain_zome_types::{EntryDef, EntryVisibility};
+use holochain_zome_types::prelude::{EntryDef, EntryVisibility};
 
 let entry_def = EntryDef {
     id: "my_entry".into(),
     visibility: EntryVisibility::Public,
     required_validations: RequiredValidations::default(),
     cache_at_agent_activity: false,
-    required_validation_type: Default::default(),
 };
 
 let zomes = SweetInlineZomes::new(vec![entry_def], /* num_link_types */ 0)
@@ -464,7 +470,7 @@ let zomes = SweetInlineZomes::new(vec![entry_def], /* num_link_types */ 0)
         let hash = api.create(CreateInput::new(
             EntryDefLocation::app(0, 0),
             EntryVisibility::Public,
-            Entry::app(SerializedBytes::try_from(input)?)?,
+            Entry::app(SerializedBytes::try_from(input)?).unwrap(), // EntryError has no From into InlineZomeError
             ChainTopOrdering::default(),
         ))?;
         Ok(hash)
@@ -542,8 +548,9 @@ import { AdminWebsocket, AppWebsocket } from '@holochain/client';
 import { execSync, spawn } from 'child_process';
 
 export default async function globalSetup() {
-  // 1. Start conductor via hc sandbox
-  const conductor = spawn('hc', ['sandbox', 'run', '--root', './test-workdir'], {
+  // 1. Start conductor via hc sandbox. `run` has no --root: it reads the `.hc` file in its cwd
+  const conductor = spawn('hc', ['sandbox', 'run', '--all'], {
+    cwd: './test-workdir',
     stdio: ['ignore', 'pipe', 'pipe']
   });
 

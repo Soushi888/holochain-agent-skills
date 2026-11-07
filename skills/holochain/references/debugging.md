@@ -138,9 +138,9 @@ For a problem that only appears after minutes, per-call dumps are the wrong inst
 ```yaml
 network:
   report:
-    type: json_lines
-    days_retained: 7
-    fetched_op_interval_s: 60
+    json_lines:
+      days_retained: 7
+      fetched_op_interval_s: 60
 ```
 
 Then read the resulting JSON lines rather than trying to catch the moment live. Details in `networking.md`.
