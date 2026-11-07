@@ -27,14 +27,14 @@ Users receive a single installer (`.exe` / `.dmg` / `.AppImage`) with no Holocha
 
 | Branch | Holochain version | Status | Use when |
 |--------|-------------------|--------|----------|
-| `main` | 0.7.0 (unchanged since 2026-07-31) | Development | Currently behind `main-0.7`; do not assume it is the newest |
-| `main-0.7` | 0.7.1 (since 2026-10-22) | **Recommended** | New production projects |
-| `main-0.6` | 0.6.3 | Legacy | Existing 0.6.x apps not yet ported |
-| `main-0.5` | 0.5.x | Archived | Old apps only |
+| `main` | 0.7.0 (unchanged since 2026-07-31) | Not listed in the README | Behind `main-0.7`; do not assume it is the newest |
+| `main-0.7` | 0.7.1 (since 2026-10-22) | "unstable" in Kangaroo's README | New 0.7 projects (this skill's line) |
+| `main-0.6` | 0.6.3 | "stable" in Kangaroo's README | Existing 0.6.x apps not yet ported |
+| `main-0.5` | 0.5.x | Listed, unlabelled | Old apps only |
 
 **Default choice: `main-0.7`** unless you have a specific reason to use another. The version column moves without a Kangaroo release: read `holochainVersion` in the branch's `kangaroo.config.ts` before trusting it.
 
-Pin to a versioned branch rather than `main`. `main` follows whatever core is current, so a clone taken a month apart can produce two different conductors.
+Pin to a versioned branch rather than `main`. `main` is not the newest line: it still pins 0.7.0 while `main-0.7` is on 0.7.1, and a versioned branch is the one Kangaroo's README points to for each Holochain line.
 
 ---
 
@@ -55,6 +55,8 @@ git clone https://github.com/holochain/kangaroo-electron
 cd kangaroo-electron
 git checkout main-0.7
 
+# First replace appId and productName in kangaroo.config.ts (see Configuration):
+# yarn setup runs write:configs, which throws on the template placeholders
 # Installs dependencies, downloads the conductor and lair binaries, fetches the
 # webhapp if `webhapp` is set in kangaroo.config.ts, and writes the configs
 yarn setup
@@ -69,7 +71,7 @@ yarn setup
 ### Production: `.webhapp` bundle in `pouch/`
 
 A `.webhapp` is a single archive containing:
-1. Your `.happ` (conductor + DNA + zomes)
+1. Your `.happ` (the DNA bundles and the hApp manifest)
 2. Your UI assets (HTML/JS/CSS)
 
 **Key distinction:** `.webhapp` ≠ `.happ`. The `.happ` is backend only. The `.webhapp` bundles both backend and frontend.
@@ -87,7 +89,7 @@ Kangaroo unpacks the first `.webhapp` it finds in `pouch/` (`scripts/unpack-pouc
 
 ### Development mode
 
-For dev mode you don't need a `.webhapp`. Instead, the optional `devConfig` in `kangaroo.config.ts` takes either `{ happPath, uiPort }` (your `.happ` file and the port of your UI dev server) or `{ webhappPath }`.
+`yarn dev` also needs the `.webhapp` in `pouch/`: it runs `pouch:unpack` before starting. `KangarooConfig` declares an optional `devConfig` (`{ happPath, uiPort }` or `{ webhappPath }`), but nothing in Kangaroo's `src/` or `scripts/` at `0498122` reads it, so do not rely on it.
 
 ---
 
@@ -108,7 +110,7 @@ export default defineConfig({
   systray: true,
   bootstrapUrl: 'https://dev-test-bootstrap2.holochain.org/',
   relayUrl: 'https://dev-test-bootstrap2.holochain.org/',
-  // networkSeed?, webhapp?: { url, sha256 }, devConfig?, author?
+  // networkSeed?, webhapp?: { url, sha256 }, author?
   bins: {
     holochainVersion: '0.7.1',         // match your branch
     holochain: { sha256: { /* per platform */ } },
@@ -140,7 +142,7 @@ Kangaroo uses a versioning convention that controls user data isolation:
 
 Holochain 0.6 introduced **iroh** alongside tx5. **0.7 removed tx5 and WebRTC entirely** — iroh over QUIC is the only transport, and it is compiled in unconditionally, so the `transport-iroh` Cargo feature no longer exists.
 
-Kangaroo writes the conductor config from `templates/conductor-config.yaml`, filling in `bootstrapUrl` and `relayUrl` from `kangaroo.config.ts`. It needs a `relayUrl` and must **not** carry `signalUrl` or `webrtcConfig`:
+On every launch Kangaroo writes the app's `conductor-config.yaml` from its template and sets `network.bootstrap_url` and `network.relay_url` from `kangaroo.config.ts` (`src/main/holochainManager.ts`). It needs a `relayUrl` and must **not** carry `signalUrl` or `webrtcConfig`:
 
 ```typescript
 // kangaroo.config.ts on main-0.7
@@ -169,7 +171,7 @@ Script names are from `package.json`. Kangaroo's README writes `yarn build:windo
 
 ## CI/CD via GitHub Actions
 
-Kangaroo ships one workflow, `.github/workflows/release.yaml`, triggered by a push to the **`release`** branch. Signing is not a separate branch: it is switched on by `macOSCodeSigning` and `windowsEVCodeSigning` in `kangaroo.config.ts`.
+Kangaroo ships one workflow, `.github/workflows/release.yaml`, triggered by a push to the **`release`** branch. Signing is not a separate branch: it is switched on by `macOSCodeSigning` and `windowsEVCodeSigning` in `kangaroo.config.ts`. macOS notarization also needs the `afterSign: scripts/notarize.js` line uncommented in `templates/electron-builder-template.yml`.
 
 1. Give CI the `.webhapp`: commit it in `pouch/`, or set `webhapp: { url, sha256 }`.
 2. Create a draft GitHub release whose tag is `v` plus `version` from `kangaroo.config.ts` (for example `v0.1.0`). The workflow uploads the installers to it.
@@ -183,7 +185,7 @@ Kangaroo ships one workflow, `.github/workflows/release.yaml`, triggered by a pu
 
 ## Auto-Update
 
-Kangaroo uses `@matthme/electron-updater`, a fork of `electron-updater` whose update check returns the newest release on your app's own semver line rather than the newest release overall.
+Kangaroo uses `@matthme/electron-updater`. A comment in `src/main/index.ts` says the updater comes from a patched fork (`holochain/electron-builder`) so that `checkForUpdates()` returns the newest semver-compatible release rather than the newest release overall; Kangaroo then checks compatibility itself.
 
 - Runs on startup only when `autoUpdates` is `true` and the app is packaged.
 - Offers only updates with the same breaking version as the installed app and a higher version number. A breaking update is never offered, because it would be a different conductor.
@@ -196,7 +198,7 @@ Kangaroo uses `@matthme/electron-updater`, a fork of `electron-updater` whose up
 
 | Option | Description | When to use |
 |--------|-------------|-------------|
-| **p2p Shipyard** | Community-maintained Tauri + Nix approach | Need Android support |
+| **p2p Shipyard** | darksoil.studio's Tauri-based suite for desktop and mobile, distributed under a single-tier licence ([pricing](https://darksoil.studio/p2p-shipyard/pricing)) | Need mobile builds |
 | **Moss** | Holochain groupware framework | App integrates into a shared workspace |
 
 ---
@@ -205,7 +207,7 @@ Kangaroo uses `@matthme/electron-updater`, a fork of `electron-updater` whose up
 
 | Tool | Reason |
 |------|--------|
-| **Holochain Launcher** | Officially deprecated; development paused. Do not build new projects for it. |
+| **Holochain Launcher** | Its README: "not being actively maintained", usable with Holochain 0.4, "support for Holochain 0.5+ should not be expected", and it recommends Kangaroo for distribution |
 | **Kangaroo-Tauri** | Frozen at Holochain 0.3.2 (last update Aug 2024). Not maintained. |
 
 ---
@@ -215,9 +217,9 @@ Kangaroo uses `@matthme/electron-updater`, a fork of `electron-updater` whose up
 | Error / Symptom | Cause | Fix |
 |-----------------|-------|-----|
 | App won't start after version bump | Minor/major bump → new isolated data folder | Expected behavior. User data not migrated automatically — implement migration if needed. |
-| Network connectivity fails | iroh relay not configured | Set `relayUrl` in `kangaroo.config.ts` |
-| Conductor exits immediately on start | Config still sets `signal_url` / `webrtc_config` / `chc_url` / `db_sync_strategy` | Remove them. 0.7 rejects unknown `NetworkConfig` fields instead of ignoring them. `db_sync_strategy` is now `db_sync_level` (`Full`/`Normal`/`Off`) |
-| Conductor can't read existing data after upgrade | 0.7 renamed its databases and changed DNA hashes | Expected. There is no migration path; clear conductor data (`hc sandbox clean`). You are joining a new network |
+| `yarn build` fails its typecheck on the config | `relayUrl` (or another required field) missing from `kangaroo.config.ts` | `relayUrl` is a required `KangarooConfig` field; set it |
+| Conductor exits immediately on start | Config still sets `signal_url` / `webrtc_config` (0.6 `NetworkConfig` fields) or `chc_url` / `db_sync_strategy` (0.6 `ConductorConfig` fields) | Remove them. Both structs are `deny_unknown_fields`, so 0.7 rejects them instead of ignoring them. `db_sync_strategy` is now `db_sync_level` (`Full`/`Normal`/`Off`) |
+| Conductor can't read existing data after upgrade | 0.7 renamed its databases and changed DNA hashes | Expected. There is no migration path. For a Kangaroo app, delete its `userData` directory, whose path Kangaroo logs at startup as the one to delete for a factory reset; `hc sandbox clean` only removes `hc sandbox` sandboxes |
 | Binary checksum mismatch | Corrupted download, or `bins.holochainVersion` changed without its hashes | `rm -rf resources/bins && yarn fetch:binaries`. After changing `holochainVersion`, run `yarn update:binary-hashes` first |
 
 **Reference:** [developer.holochain.org/get-started/4-packaging-and-distribution/](https://developer.holochain.org/get-started/4-packaging-and-distribution/)

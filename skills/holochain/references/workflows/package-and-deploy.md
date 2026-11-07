@@ -2,7 +2,7 @@
 
 Guided 7-step workflow for packaging a Holochain hApp into a standalone desktop application using Kangaroo-Electron.
 
-**Reference:** `../../deployment.md` for full details on any step.
+**Reference:** `../deployment.md` for full details on any step.
 
 ---
 
@@ -21,7 +21,7 @@ Ensure `relayUrl` is set in `kangaroo.config.ts` (Kangaroo writes it into the co
 
 **Checkpoint:** You know which Kangaroo branch to use (`main-0.7` for 0.7.x apps).
 
-**Common mistake:** Using `main` for a production app. `main` follows the current line and moves without warning. Use `main-0.7` unless you explicitly need cutting-edge features.
+**Common mistake:** Using `main` for a production app. `main` is not the newest line: it still pins Holochain 0.7.0 while `main-0.7` is on 0.7.1. Use `main-0.7` for a 0.7 app.
 
 ---
 
@@ -33,14 +33,16 @@ Clone the repository and install dependencies.
 git clone https://github.com/holochain/kangaroo-electron
 cd kangaroo-electron
 git checkout main-0.7
+# Replace appId and productName in kangaroo.config.ts first (Step 4):
+# yarn setup throws on the template placeholders
 yarn setup
 ```
 
 `yarn setup` installs dependencies, downloads the conductor and lair-keystore binaries into `resources/bins/` and checks them against the SHA256 hashes in `kangaroo.config.ts`. No manual compilation required. Use the repository as a template or a fork for your own app.
 
-**Checkpoint:** `resources/bins/` holds both binaries and `yarn dev` doesn't error on missing binaries.
+**Checkpoint:** `resources/bins/` holds both binaries.
 
-**Common mistake:** Forgetting to `git checkout main-0.7` after cloning (defaults to `main`, which tracks the latest line).
+**Common mistake:** Forgetting to `git checkout main-0.7` after cloning (defaults to `main`, which still pins 0.7.0).
 
 ---
 
@@ -50,7 +52,7 @@ Build your hApp outside Kangaroo and place the `.webhapp` bundle into `pouch/`.
 
 ```bash
 # Build your webhapp (from your hApp project root)
-hc app pack ./workdir --recursive
+hc web-app pack ./workdir --recursive   # reads web-happ.yaml; hc app pack makes only the .happ
 # or your build script:
 bun run build:webhapp
 
@@ -58,7 +60,7 @@ bun run build:webhapp
 cp path/to/your-app.webhapp /path/to/kangaroo-electron/pouch/
 ```
 
-**What goes in `pouch/`:** A `.webhapp` file — a single bundle containing both your `.happ` (conductor + DNAs + zomes) **and** your UI assets. This is NOT the same as a `.happ` file, which is backend only.
+**What goes in `pouch/`:** A `.webhapp` file — a single bundle containing both your `.happ` (the DNA bundles and the hApp manifest) **and** your UI assets. This is NOT the same as a `.happ` file, which is backend only.
 
 **UI icon:** Include `icon.png` (at least 256×256 px) at the UI root. Without it the build only warns, but the icon is required when `systray` is on.
 
@@ -116,7 +118,7 @@ git push --set-upstream origin release
 
 **GitHub Actions** builds a Windows NSIS installer (`*-setup.exe`), macOS `.dmg` files (Apple Silicon and Intel), and Linux `.AppImage` and `.deb`.
 
-**Code signing** is switched on in `kangaroo.config.ts`, not by a branch, and each flag needs its secrets:
+**Code signing** is switched on in `kangaroo.config.ts`, not by a branch, and each flag needs its secrets. macOS notarization also needs `afterSign: scripts/notarize.js` uncommented in `templates/electron-builder-template.yml`.
 - `macOSCodeSigning: true`: `APPLE_CERTIFICATE`, `APPLE_CERTIFICATE_PASSWORD`, `APPLE_DEV_IDENTITY`, `APPLE_ID_EMAIL`, `APPLE_ID_PASSWORD`, `APPLE_TEAM_ID`
 - `windowsEVCodeSigning: true`: `AZURE_KEY_VAULT_URI`, `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, `AZURE_CLIENT_SECRET`, `AZURE_CERT_NAME`
 
@@ -148,4 +150,4 @@ Build:   yarn build:linux | build:mac-arm64 | build:mac-x64 | build:win
 Publish: draft release v<version>, then merge main into release and push
 ```
 
-**See also:** `../../deployment.md` for troubleshooting, CI secrets reference, and alternative deployment options.
+**See also:** `../deployment.md` for troubleshooting, CI secrets reference, and alternative deployment options.
