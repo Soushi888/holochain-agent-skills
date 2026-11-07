@@ -1,6 +1,7 @@
 use holochain::conductor::api::error::ConductorApiError;
 use holochain::conductor::CellError;
 use holochain::core::workflow::WorkflowError;
+use holochain::core::SourceChainError;
 use holochain::prelude::*;
 use holochain::sweettest::*;
 use posts::post::*;
@@ -225,23 +226,48 @@ async fn create_post_with_empty_title_is_rejected() {
         .await;
 
     // The commit is refused by the author's own inline validation, which surfaces as
-    // `InvalidCommit` carrying the `Invalid(..)` message from the integrity zome. Matching
-    // this variant and message separates a validation rejection from any other failure.
+    // `SourceChainError::InvalidCommit` carrying the `Invalid(..)` message from the
+    // integrity zome. Matching the variant and the message separates a validation
+    // rejection from any other failure.
+    assert_rejected_by_validation(result, "Post title must not be empty");
+}
+
+#[tokio::test(flavor = "multi_thread")]
+async fn update_post_with_empty_title_is_rejected() {
+    let mut conductor = SweetConductor::standard().await;
+    let dna_path = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../workdir/forum.dna");
+    let dna_file = SweetDnaFile::from_bundle(&dna_path).await.unwrap();
+    let app = conductor.setup_app("test-app", &[dna_file]).await.unwrap();
+    let zome = app.cells()[0].zome("posts");
+
+    let post = sample_post(&conductor, &zome).await;
+    let record: Record = conductor.call(&zome, "create_post", post).await;
+    let original_action_hash = record.signed_action.hashed.hash.clone();
+
+    // The same rule applies to a new version of the entry.
+    let update_input = UpdatePostInput {
+        original_post_hash: original_action_hash.clone(),
+        previous_post_hash: original_action_hash,
+        updated_post: Post {
+            title: "   ".to_string(),
+            content: "Some content".to_string(),
+        },
+    };
+    let result: Result<Record, _> = conductor
+        .call_fallible(&zome, "update_post", update_input)
+        .await;
+
+    assert_rejected_by_validation(result, "Post title must not be empty");
+}
+
+fn assert_rejected_by_validation(result: Result<Record, ConductorApiError>, rule: &str) {
     match result {
         Err(ConductorApiError::CellError(CellError::WorkflowError(workflow_error))) => {
             match *workflow_error {
-                WorkflowError::SourceChainError(error) => {
-                    let reason = error.to_string();
-                    assert!(
-                        reason.starts_with("InvalidCommit error:"),
-                        "not a validation rejection: {reason}"
-                    );
-                    assert!(
-                        reason.contains("Post title must not be empty"),
-                        "unexpected rejection reason: {reason}"
-                    );
+                WorkflowError::SourceChainError(SourceChainError::InvalidCommit(reason)) => {
+                    assert!(reason.contains(rule), "unexpected rejection reason: {reason}");
                 }
-                other => panic!("expected a source chain error, got {other:?}"),
+                other => panic!("expected an InvalidCommit, got {other:?}"),
             }
         }
         other => panic!("expected a validation rejection, got {other:?}"),
