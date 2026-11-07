@@ -140,7 +140,7 @@ roles:
       strategy: create
       deferred: false
     dna:
-      bundled: "./my_dna.dna"
+      path: "./my_dna.dna"
       modifiers:
         network_seed: ~
         properties: ~
@@ -153,14 +153,13 @@ name: my_dna
 integrity:
   network_seed: ~
   properties: ~
-  origin_time: 1704067200000000
   zomes:
     - name: my_domain_integrity
-      bundled: "./zomes/integrity/my_domain_integrity.wasm"
+      path: "./zomes/integrity/my_domain_integrity.wasm"
 coordinator:
   zomes:
     - name: my_domain
-      bundled: "./zomes/coordinator/my_domain.wasm"
+      path: "./zomes/coordinator/my_domain.wasm"
       dependencies:
         - name: my_domain_integrity
 ```
@@ -170,17 +169,18 @@ coordinator:
 ## Scaffolding Commands
 
 ```bash
-# Generate entry type boilerplate (integrity + coordinator stubs)
-hc scaffold entry-type MyEntry
+# Generate entry type boilerplate (integrity + coordinator stubs); the name must be snake_case
+hc scaffold entry-type my_entry
 
-# Generate link type
-hc scaffold link-type AgentToMyEntry
+# Generate a link type: positional from- and to-referenceables (`agent` or an entry type)
+hc scaffold link-type agent my_entry
 
-# Build and verify compilation
-hc s sandbox generate workdir/
+# Build: compile the zomes, then pack the DNA and hApp bundles
+RUSTFLAGS='--cfg getrandom_backend="custom"' cargo build --release --target wasm32-unknown-unknown
+hc app pack workdir --recursive
 
-# Run tests
-bun run test
+# Run tests (Sweettest)
+cargo test
 ```
 
 ---
@@ -262,13 +262,13 @@ roles:
       strategy: create
       deferred: false
     dna:
-      bundled: "./primary.dna"
+      path: "./primary.dna"
   - name: secondary_role
     provisioning:
       strategy: create
       deferred: false         # provisioned on install, clonable at runtime
     dna:
-      bundled: "./secondary.dna"
+      path: "./secondary.dna"
       modifiers:
         network_seed: ~
       clone_limit: 10         # allow up to 10 clones of this role

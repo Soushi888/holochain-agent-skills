@@ -48,7 +48,7 @@ Grantor: progenitor cell
 Grantee: specific delegate agent
 Constraint: Assigned { secret, assignees: [delegate_pubkey] }
 Grant timing: progenitor creates grant on delegation
-Secret distribution: progenitor sends via private entry to delegate
+Secret distribution: progenitor hands the secret to the delegate in a call_remote payload or a remote signal (a private entry never leaves the author's chain); the delegate stores it with create_cap_claim(CapClaim { tag, grantor, secret })
 ```
 
 ## Step 4: Write the `init()` Function

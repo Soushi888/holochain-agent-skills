@@ -12,17 +12,20 @@ Start from scaffold output to avoid blank-page overhead:
 # Navigate to your DNA directory
 cd dnas/my_dna
 
-# Scaffold entry type (generates integrity + coordinator stubs)
-hc scaffold entry-type MyEntry
+# Scaffold entry type (generates integrity + coordinator stubs); the name must be snake_case.
+# It prompts for fields and CRUD, including whether to link each update from the original.
+hc scaffold entry-type my_entry
 
-# Scaffold link types
-hc scaffold link-type AgentToMyEntry
-hc scaffold link-type PathToMyEntry
-hc scaffold link-type MyEntryUpdates
+# Scaffold a link type: positional from- and to-referenceables (`agent` or an entry type)
+hc scaffold link-type agent my_entry
 
-# Verify compilation after scaffolding
+# Path-anchored "all entries" links come from a collection, not from link-type
+hc scaffold collection global all_my_entries my_entry
+
+# Verify compilation after scaffolding (from the hApp root)
 cd ../../
-hc s sandbox generate workdir/
+RUSTFLAGS='--cfg getrandom_backend="custom"' cargo build --release --target wasm32-unknown-unknown
+hc app pack workdir --recursive
 ```
 
 **What scaffolding generates:**
@@ -246,41 +249,17 @@ pub struct UpdateMyEntryInput {
 }
 ```
 
-**lib.rs — register all functions (complete example):**
+**lib.rs: declare the module (complete example):**
 ```rust
 pub mod my_entry;
 
 use hdk::prelude::*;
 use {domain}_integrity::*;
-use my_entry::UpdateMyEntryInput;
 
-#[hdk_extern]
-pub fn create_my_entry(entry: MyEntry) -> ExternResult<Record> {
-    my_entry::create_my_entry(entry)
-}
-
-#[hdk_extern]
-pub fn get_latest_my_entry(original_action_hash: ActionHash) -> ExternResult<Option<Record>> {
-    my_entry::get_latest_my_entry(original_action_hash)
-}
-
-#[hdk_extern]
-pub fn get_all_my_entries(_: ()) -> ExternResult<Vec<Record>> {
-    my_entry::get_all_my_entries(())
-}
-
-#[hdk_extern]
-pub fn update_my_entry(input: UpdateMyEntryInput) -> ExternResult<Record> {
-    my_entry::update_my_entry(input)
-}
-
-#[hdk_extern]
-pub fn delete_my_entry(original_action_hash: ActionHash) -> ExternResult<ActionHash> {
-    my_entry::delete_my_entry(original_action_hash)
-}
+// init, recv_remote_signal and post_commit live here; the CRUD externs stay in my_entry.rs
 ```
 
-Note: each function in `my_entry.rs` already has `#[hdk_extern]`, so the `lib.rs` wrappers are thin delegators. This is the standard pattern the scaffold generates.
+Note: each function in `my_entry.rs` already has `#[hdk_extern]`, which exports it as an unmangled `extern "C"` symbol. Do not re-declare `#[hdk_extern]` wrappers with the same names in `lib.rs`: two exports named `create_my_entry` are duplicate symbols and the zome fails to build. The scaffold keeps the externs in their modules and `lib.rs` only declares `pub mod my_entry;`, as in `../example-happ/dnas/forum/zomes/coordinator/posts/src/lib.rs`.
 
 ---
 
@@ -326,21 +305,19 @@ cargo test --package my_dna_tests
 cargo test --package my_dna_tests two_agents  # single test
 ```
 
-See `../testing.md` for full code patterns including `await_consistency_60s` placement, `SweetConductorBatch` setup, and inline-zome shortcuts.
+See `../testing.md` for full code patterns including `await_consistency` placement (60 s budget; `await_consistency_s(timeout, cells)` for another one), `SweetConductorBatch` setup, and inline-zome shortcuts.
 
 ---
 
 ## Step 6: Build and Verify
 
 ```bash
-# Full build — verify no compile errors
-hc s sandbox generate workdir/
+# Full build: compile the zomes, then pack the bundles (the example hApp's `build:happ` script)
+RUSTFLAGS='--cfg getrandom_backend="custom"' cargo build --release --target wasm32-unknown-unknown
+hc app pack workdir --recursive
 
-# If build succeeds, run tests
-bun run test:foundation
-
-# After foundation passes, run integration
-bun run test:integration
+# If build succeeds, run the Sweettest suite (foundation tests first, then integration)
+cargo test --package my_dna_tests
 ```
 
 **Common build errors:**
@@ -348,7 +325,7 @@ bun run test:integration
 | Error | Cause | Fix |
 |-------|-------|-----|
 | `cannot find type EntryTypes` | Missing import | Add `use {domain}_integrity::*;` |
-| `op.to_type()` deprecated | Old API | Replace with `op.flattened()` |
+| `no method named to_type` | `Op::to_type` was removed in hdi 0.5 | Replace with `op.flattened::<EntryTypes, LinkTypes>()?` |
 | `expected ExternResult, found ValidateCallbackResult` | Wrong return | Use `Ok(ValidateCallbackResult::Valid)` |
 | Link type not found | Unregistered link | Add to `#[hdk_link_types]` enum in integrity |
 | `wasm-opt` timeout | Build too slow | Normal for first build; subsequent builds cache |

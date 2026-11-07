@@ -2,7 +2,7 @@
 
 A membrane is the check that runs when an agent joins a DNA's network, before that agent can write anything. It is the only mechanism Holochain gives you for "not everyone may participate", and it is enforced by validation like everything else.
 
-Types read from `holochain_integrity_types 0.7.0` (`src/genesis.rs`, `src/action.rs`), `hdi 0.8.0` (`src/map_extern.rs`, `src/flat_op/flat_op_record.rs`), `hdk_derive 0.7.0`, and the published `@holochain/client 0.21.1` type declarations.
+Types read from `holochain_integrity_types 0.7.1` (`src/genesis.rs`, `src/action.rs`), `hdi 0.8.1` (`src/map_extern.rs`, `src/flat_op/flat_op_record.rs`), `hdk_derive 0.7.1`, and the published `@holochain/client 0.21.1` type declarations.
 
 ## The three places a membrane is enforced
 
@@ -132,7 +132,7 @@ pub struct GenesisSelfCheckDataV2 {
 
 **The extern name on the wire is `genesis_self_check_2`.** `hdi`'s `map_extern!` rewrites `genesis_self_check` to `genesis_self_check_2` for you. You write the plain name; do not hand-roll the mangled one.
 
-**The return type is checked at compile time.** `hdk_derive 0.7.0` treats `genesis_self_check` exactly like `validate`: it must return `ExternResult<ValidateCallbackResult>`, or `ValidateCallbackResult` when marked `#[hdk_extern(infallible)]`. Any other return type aborts the macro expansion with an error naming the required type.
+**The return type is checked at compile time.** `hdk_derive 0.7.1` treats `genesis_self_check` exactly like `validate`: it must return `ExternResult<ValidateCallbackResult>`, or `ValidateCallbackResult` when marked `#[hdk_extern(infallible)]`. Any other return type aborts the macro expansion with an error naming the required type.
 
 ## Enforcing it in validation
 
@@ -194,13 +194,13 @@ AgentValidationPkg {
 }
 ```
 
-`TypedAction<D>` is declared at `hdi-0.8.0/src/flat_op/typed_action.rs:17` as
+`TypedAction<D>` is declared at `hdi-0.8.1/src/flat_op/typed_action.rs:16` as
 `{ header: ActionHeader, data: D }`, and re-exported by `hdi::flat_op` and so by the prelude. It is
 `hdi`'s own type, not one borrowed from `holochain_integrity_types`. Four accessors read the header
 directly: `author()`, `timestamp()`, `action_seq()` and `prev_action()`, so `action.author()` above
 is `&AgentPubKey` and needs no unwrapping. `TypedAction<D>` also derefs to `D`, so the per-variant
 fields are reachable without going through `.data`. The `AgentValidationPkg` variant itself is at
-`hdi-0.8.0/src/flat_op/flat_op_record.rs:149`.
+`hdi-0.8.1/src/flat_op/flat_op_record.rs:149`.
 
 ### Which to use
 
@@ -227,7 +227,7 @@ The scaffolder puts this directly above the stub, and read alone it sounds like 
 
 It is true, and it does not mean what it looks like. The contrast it is drawing is with `genesis_self_check`, which runs before the agent has joined and where nothing can be fetched, not with determinism.
 
-The precise fact, checkable in one command: **`hdi 0.8.0` exports no `get()` and no `get_links()` at all.** The entire network surface available to an integrity crate is the `must_get_*` family: `must_get_entry`, `must_get_action`, `must_get_valid_record`, `must_get_agent_activity`. There is nothing non-deterministic to reach for, which is why the comment can promise network access without qualifying it.
+The precise fact, checkable in one command: **`hdi 0.8.1` exports no `get()` and no `get_links()` at all.** The entire network surface available to an integrity crate is the `must_get_*` family: `must_get_entry`, `must_get_action`, `must_get_valid_record`, `must_get_agent_activity`. There is nothing non-deterministic to reach for, which is why the comment can promise network access without qualifying it.
 
 Those functions are deterministic in the sense that matters, and the HDI says why in `must_get_entry`'s own documentation: it "is available in contexts such as validation where both determinism and network access is desirable", and when a dependency cannot be found, "callbacks will return early with `UnresolvedDependencies`". A missing dependency **defers** the validation rather than failing it. That is what makes a network read safe here: every validator eventually sees the same data and reaches the same verdict, or none of them decides yet.
 
@@ -259,17 +259,17 @@ with an upstream comment sitting directly above it that says exactly what is mis
 // TODO: make this take a more flexible config for specifying things like
 //       membrane proofs
 ```
- `install_app_with_manifest` does the same. The one function that accepts `Option<MembraneProof>`, `Conductor::install_app_minimal`, is `pub(crate)` and feature-gated, so a downstream test crate cannot call it. Searching the entire `sweettest` module of `holochain 0.7.0` for `MembraneProof` returns **nothing**.
+ `install_app_with_manifest` does the same. The one function that accepts `Option<MembraneProof>`, `Conductor::install_app_minimal`, is `pub(crate)` and feature-gated, so a downstream test crate cannot call it. Searching the entire `sweettest` module of `holochain 0.7.1` for `MembraneProof` returns **nothing**.
 
 So there is no direct way to hand a proof to `setup_app`. Two things that do work:
 
 **1. Keep the rule in a plain function and unit-test that.** `validate_agent_joining` takes an `AgentPubKey` and an `Option<MembraneProof>` and returns an `ExternResult<ValidateCallbackResult>`. It needs no conductor. Most of the value is in testing that function directly with hand-built proofs, and it costs nothing.
 
-**2. Deferred memproofs, for a genuine end-to-end test.** Every piece of this path is public in 0.7.0: `app_manifest_from_dnas(dnas, clone_limit, memproofs_deferred, network_seed)` is `pub`, `SweetConductor::raw_handle()` is `pub`, and `Conductor::provide_memproofs(installed_app_id, MemproofMap)` is `pub`. Build the manifest with deferred memproofs allowed, install it, then supply the map, then enable.
+**2. Deferred memproofs, for a genuine end-to-end test.** Every piece of this path is public in 0.7.1: `app_manifest_from_dnas(dnas, clone_limit, memproofs_deferred, network_seed)` is `pub`, `SweetConductor::raw_handle()` is `pub`, and `Conductor::provide_memproofs(installed_app_id, MemproofMap)` is `pub`. Build the manifest with deferred memproofs allowed, install it, then supply the map, then enable.
 
-**`provide_memproofs` does not start the app.** It runs genesis and then sets the status to `Disabled(NotStartedAfterProvidingMemproofs)`, verified at `holochain-0.7.0/src/conductor/conductor.rs:1608`. So the sequence is install, provide, **then enable**. Skip the enable and you get an installed app with a genesised chain that never runs, and the status is the only thing that tells you why.
+**`provide_memproofs` does not start the app.** It runs genesis and then sets the status to `Disabled(NotStartedAfterProvidingMemproofs)`, verified at `holochain-0.7.1/src/conductor/conductor.rs:1673`. So the sequence is install, provide, **then enable**. Skip the enable and you get an installed app with a genesised chain that never runs, and the status is the only thing that tells you why.
 
-> **Verified at the type level, not compiled.** The three visibilities and signatures above were read from `holochain 0.7.0` sources. The exact call sequence for wiring them together has not been compiled in this skill's example hApp, unlike every other Rust example here. Treat it as a starting point and expect to adjust, and prefer approach 1 for routine coverage.
+> **Verified at the type level, not compiled.** The three visibilities and signatures above were read from `holochain 0.7.1` sources. The exact call sequence for wiring them together has not been compiled in this skill's example hApp, unlike every other Rust example here. Treat it as a starting point and expect to adjust, and prefer approach 1 for routine coverage.
 
 This gap is the reason to decide early whether a DNA has a membrane. Retrofitting one onto a project with an established test suite costs more than the validation rule suggests.
 
@@ -312,7 +312,7 @@ and the app websocket takes them:
 await appClient.provideMemproofs({ my_role: proofBytes });
 ```
 
-**Then enable it.** `provideMemproofs` genesises the cells and then **disables the app**, every time, by design. It is not an error path. `Conductor::provide_memproofs` sets `AppStatus::Disabled(DisabledAppReason::NotStartedAfterProvidingMemproofs)` unconditionally (`holochain-0.7.0/src/conductor/conductor.rs:1608`), and waits for an explicit enable:
+**Then enable it.** `provideMemproofs` genesises the cells and then **disables the app**, every time, by design. It is not an error path. `Conductor::provide_memproofs` sets `AppStatus::Disabled(DisabledAppReason::NotStartedAfterProvidingMemproofs)` unconditionally (`holochain-0.7.1/src/conductor/conductor.rs:1673`), and waits for an explicit enable:
 
 ```typescript
 await appClient.provideMemproofs({ my_role: proofBytes });

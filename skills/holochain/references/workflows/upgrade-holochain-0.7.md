@@ -138,7 +138,7 @@ JavaScript, see `client.md`:
 - `SignedActionHashed` is no longer generic
 - `action.hashed.content.author` → `.header.author`
 - `TransportStats` → `ApiTransportStats`, `is_webrtc` → `is_direct`
-- `signalingServerUrl` → `relayServerUrl`
+- Test harnesses that run local services: the field `signalingServerUrl` became `relayServerUrl` in the client repo's own e2e helper `ConnectionServices` (`holochain-client-js` `test/e2e/common.ts`, CHANGELOG 0.21.0-dev.3). It is not part of the published `@holochain/client` API, so only code copied from that helper needs the rename
 
 ---
 
