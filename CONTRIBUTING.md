@@ -72,17 +72,22 @@ One version, declared in four places, and one tag. `package.json`, the `metadata
 2. Run the gates locally: `sh scripts/validate-skill.sh`, `sh scripts/eval/run-eval.sh`, `sh scripts/check-versions.sh vX.Y.Z`, `bun run build`, `sh scripts/build-release-assets.sh`, `sh scripts/check-reproducible.sh`, `nix flake check`.
 3. Merge to `main`, then push the tag: `git tag vX.Y.Z && git push origin vX.Y.Z`. `release.yml` re-runs every gate and creates the GitHub release with the `.tar.gz`, the `.zip` and `SHA256SUMS`.
 
-To rehearse without publishing, run `release.yml` by hand from the Actions tab (`workflow_dispatch`) with the tag as input: every gate and every build step runs, and the two publishing steps are skipped.
+To rehearse without publishing, run `release.yml` by hand from the Actions tab (`workflow_dispatch`) with the tag as input, or `gh workflow run release.yml --ref <branch> -f tag=vX.Y.Z`. Every gate and every build step runs, `Publish to npm` runs with `--dry-run` and prints the exact command and authentication mode a tag push would use, and the GitHub release is not created. The tag input must match the version in the tree, because `check-versions.sh` runs first.
 
 ### Release candidates
 
 A tag whose version carries a hyphen, such as `v1.0.0-rc.1`, is a prerelease, and the workflow marks the GitHub release as one. The `releases/latest/download` URL skips prereleases, so a candidate never reaches anyone following the stable install line; testers opt in by naming the candidate's own tag in the archive URL from its release page. The version string is the full `1.0.0-rc.1` in all three in-tree places, and the changelog section is `## [1.0.0-rc.1]`. When the candidate becomes the release, rename that section to `## [1.0.0]`, set the version to `1.0.0`, and tag `v1.0.0`; nothing else changes.
 
-### On registry publishing
+### Publishing to npm
 
-The workflow still contains a `Publish to npm` step, and it is switched off: it runs only when the repository variable `NPM_PUBLISH` is set to `true`. Publishing is deferred rather than abandoned. The archive, the Nix flake and the bundled installer cover every install path, and the package name is likely to change if the `@holochain` scope is granted, so publishing under a name that would then be wrong buys nothing.
+The package is `holochain-agent-skills` on npm. A candidate publishes under the `next` dist-tag and a release under `latest`, so `npm install holochain-agent-skills` never picks up a candidate. The `Publish to npm` step runs on a tag push only when the repository variable `NPM_PUBLISH` is `true`, and it is deliberately not a gate on the GitHub release: a registry refusal fails the job visibly but never withholds archives that passed every check.
 
-Turning it back on takes two things: an npm granular access token created with **Bypass 2FA** enabled, which is false by default at creation and is what an account requiring 2FA for writes demands from CI, stored as the `NPM_TOKEN` repository secret; and the `NPM_PUBLISH` variable set to `true`. The publish step is deliberately not a gate on the GitHub release, so a registry refusal can never again withhold archives that passed every check.
+The step authenticates one of two ways, and prints which one it was given (`mode=token` or `mode=oidc`):
+
+- **Bootstrap, once, with a token.** npm trusted publishing is configured on a package that already exists, so the very first publish needs a token. Create an npm granular access token with read and write access to packages and **Bypass 2FA** enabled (it is off by default at creation, and an account that requires 2FA for writes refuses CI without it, which is the 403 the first attempt hit). Store it as the `NPM_TOKEN` repository secret, set `NPM_PUBLISH` to `true`, and push the tag.
+- **Steady state, with OIDC.** Once the package exists, add a trusted publisher in its settings on npmjs.com: GitHub Actions, repository `Soushi888/holochain-agent-skills`, workflow file `release.yml`, no environment (all fields are exact and case-sensitive). The first publish through it must happen within two days or the configuration expires. Then delete the `NPM_TOKEN` secret. The CLI exchanges the job's `id-token` for a short-lived credential, and provenance is generated automatically because the repository is public. `npm trust github` can set the publisher from the command line, but it needs npm 11.15.0 or later.
+
+Trusted publishing needs npm 11.5.1 or later on Node 22.14.0 or later; the workflow upgrades npm when the runner's is older and prints both versions. It also needs `repository.url` in `package.json` to match this repository exactly, which it does (`git+https://github.com/Soushi888/holochain-agent-skills.git`).
 
 ## Reporting a stale version pin
 
