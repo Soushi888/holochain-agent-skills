@@ -59,14 +59,6 @@ With no `Cargo.lock`, fall back to every manifest, workspace tables included: `g
 
 Say which line you found in your first reply, and offer to record it where the next session will read it (the agent instructions file the project already has, AGENTS.md or CLAUDE.md: "Holochain 0.7.x, holochain skill `<metadata.version>`"), so a later session does not rediscover it by writing broken code first.
 
----|---|
-| `hdk` 0.7.x, `hdi` 0.8.x, holonix `main-0.7` | Proceed with this skill |
-| `hdk` 0.6.x or older | Stop before writing code. Tell the user this skill's API shapes will not compile there, and offer the **UpgradeHolochain07** workflow, or the 0.6-era skill at tag `v0.2.0` if they are staying on 0.6 |
-| `hdk` 0.8 or 0.9 dev builds, holonix `main` | Say the skill predates that line, and verify every API against the project's own crate sources before using it |
-| A new project | 0.7, as the Scaffold workflows set it up |
-
-Say which line you found in your first reply, and record it where the next session will read it (the agent instructions file the project already has, AGENTS.md or CLAUDE.md: "Holochain 0.7, holochain skill `<metadata.version>`"), so a later session does not rediscover it by writing broken code first.
-
 ---
 
 ## Workflow Routing
