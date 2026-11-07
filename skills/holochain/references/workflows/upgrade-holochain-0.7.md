@@ -160,7 +160,7 @@ cargo test
 
 ## Step 6 — Packaging
 
-Rebuild whatever you ship through and check its own 0.7 support first; conductor pins lag core. Kangaroo `main-0.7` pins holochain 0.7.0.
+Rebuild whatever you ship through and check its own 0.7 support first; conductor pins lag core. Kangaroo `main-0.7` bundles holochain 0.7.1 since 2026-10-22; read `holochainVersion` in its `kangaroo.config.ts`.
 
 Publish the new DNA hashes somewhere your users can see. The old network is not reachable from the new build.
 
