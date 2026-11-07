@@ -535,13 +535,13 @@ The split that needs no extra tooling is one job per integration test file, beca
 strategy:
   fail-fast: false
   matrix:
-    suite: [post, agent_to_posts]   # one entry per file in tests/, without .rs
+    suite: [post, agent_to_posts]   # one entry per test file in tests/, without .rs; not helper modules such as common.rs
 steps:
-  # ... checkout, nix, build the .happ once and share it as an artifact ...
+  # ... checkout, nix, build the DNA once and share workdir/forum.dna as an artifact ...
   - run: cargo test --test ${{ matrix.suite }} -- --test-threads 6
 ```
 
-Build the `.happ` in one job and hand it to the shards, so each shard runs tests rather than recompiling wasm. Keep the thread cap from the troubleshooting table on every shard.
+Build once in one job and hand the shards what the tests load, `workdir/forum.dna` in the example hApp (`SweetDnaFile::from_bundle` reads it), so each shard runs tests rather than recompiling wasm. Keep the thread cap from the troubleshooting table on every shard.
 
 ---
 
