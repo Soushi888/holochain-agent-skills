@@ -44,3 +44,6 @@ R37	How do I run UpdateCoordinators on launch so a coordinator fix reaches users
 R38	Our zomes are still on hdk 0.6.1, can you add a comments zome for me?	references/workflows/upgrade-holochain-0.7.md
 R39	The agent keeps calling HDK functions that do not exist, and I just noticed the project is on 0.6.	references/workflows/upgrade-holochain-0.7.md
 R40	A user lost their laptop; can they get their source chain back on a new machine with the same agent key?	references/migration.md
+R41	Our Windows installer and our Linux CI build of the same commit give different DNA hashes, so users end up on separate networks.	references/deployment.md
+R42	Our Sweettest suite takes over two hours on GitHub Actions and hits the job time limit, how do we split it?	references/testing.md
+R43	Right after launch the first call_remote to another agent fails with a network error even though they are online.	references/networking.md
