@@ -17,7 +17,7 @@ hdi = "=0.8.1"
 ```
 
 **Check for iroh transport (required for 0.6+):**
-Ensure your conductor config or app configuration includes a `relayUrl`. If your app was built for 0.5.x, you must add this before deploying on 0.6+.
+Ensure `relayUrl` is set in `kangaroo.config.ts` (Kangaroo writes it into the conductor config). If your app was built for 0.5.x, you must add this before deploying on 0.6+.
 
 **Checkpoint:** You know which Kangaroo branch to use (`main-0.7` for 0.7.x apps).
 
@@ -33,12 +33,12 @@ Clone the repository and install dependencies.
 git clone https://github.com/holochain/kangaroo-electron
 cd kangaroo-electron
 git checkout main-0.7
-npm install
+yarn setup
 ```
 
-`npm install` automatically fetches and validates the conductor + lair-keystore binaries with SHA256 checksums. No manual compilation required.
+`yarn setup` installs dependencies, downloads the conductor and lair-keystore binaries into `resources/bins/` and checks them against the SHA256 hashes in `kangaroo.config.ts`. No manual compilation required. Use the repository as a template or a fork for your own app.
 
-**Checkpoint:** `node_modules/` is populated and `npm run start` doesn't error on missing binaries.
+**Checkpoint:** `resources/bins/` holds both binaries and `yarn dev` doesn't error on missing binaries.
 
 **Common mistake:** Forgetting to `git checkout main-0.7` after cloning (defaults to `main`, which tracks the latest line).
 
@@ -60,7 +60,7 @@ cp path/to/your-app.webhapp /path/to/kangaroo-electron/pouch/
 
 **What goes in `pouch/`:** A `.webhapp` file — a single bundle containing both your `.happ` (conductor + DNAs + zomes) **and** your UI assets. This is NOT the same as a `.happ` file, which is backend only.
 
-**UI icon:** Ensure your UI assets include `icon.png` (≥ 256×256 px) at the UI root. This is required for desktop packaging.
+**UI icon:** Include `icon.png` (at least 256×256 px) at the UI root. Without it the build only warns, but the icon is required when `systray` is on.
 
 **Checkpoint:** `pouch/your-app.webhapp` exists and has a non-zero file size.
 
@@ -68,28 +68,17 @@ cp path/to/your-app.webhapp /path/to/kangaroo-electron/pouch/
 
 ## Step 4 — Configure Metadata
 
-Update the configuration files with your app's identity.
+Set your app's identity in **`kangaroo.config.ts`**, the only config file (there is no `electron/config.ts`):
 
-**`package.json`** — name and version:
-```json
-{
-  "name": "your-app-name",
-  "version": "0.1.0"
-}
-```
-
-**`electron/config.ts`** — product identity and paths:
 ```typescript
-export const APP_ID = "com.yourorg.yourapp";         // reverse-domain, unique
-export const PRODUCT_NAME = "Your App Name";          // Windows: alphanumeric + hyphens only
-export const HAPP_PATH = "pouch/your-app.webhapp";
+appId: 'com.yourorg.yourapp',   // reverse-domain, unique: it defines where user data is stored
+productName: 'Your App Name',
+version: '0.1.0',               // overrides package.json; read Step 7 before choosing it
 ```
 
-**Sync version across files:** Ensure `package.json` version and any version displayed in your UI match.
+**Checkpoint:** `appId` and `productName` are your own. `yarn write:configs` (run by every build) refuses the template placeholders.
 
-**Checkpoint:** `APP_ID` is unique to your app, `PRODUCT_NAME` contains no special characters, `HAPP_PATH` matches the file in `pouch/`.
-
-**Common mistake:** Leaving `APP_ID` as the kangaroo template default — two apps with the same `APP_ID` will share data folders on user machines.
+**Common mistake:** Reusing another app's `appId`. Two apps with the same `appId` share data folders on user machines.
 
 ---
 
@@ -98,17 +87,17 @@ export const HAPP_PATH = "pouch/your-app.webhapp";
 Verify the app works before publishing.
 
 ```bash
-# Development mode (hot reload, DevTools available)
-npm run start
+# Development mode
+yarn dev
 
-# Production build (all configured platforms)
-npm run kangaroo
+# Production build for this platform
+yarn build:linux        # or yarn build:mac-arm64, yarn build:mac-x64, yarn build:win
 ```
 
 **Checkpoint:**
-- `npm run start` launches the app without errors
+- `yarn dev` launches the app without errors
 - UI loads and basic zome calls succeed
-- `npm run kangaroo` completes without errors
+- the `yarn build:<platform>` command completes without errors
 - Installer in `dist/` is present and installs cleanly
 
 **Common mistake:** Testing only in dev mode. Production builds can fail due to code signing or asset path issues not present in dev.
@@ -117,21 +106,19 @@ npm run kangaroo
 
 ## Step 6 — Publish via CI
 
-Push to the appropriate branch to trigger automated cross-platform builds.
+Kangaroo's single workflow (`.github/workflows/release.yaml`) builds on a push to the `release` branch. First create a draft GitHub release tagged `v` plus your `version` (for example `v0.1.0`); the workflow uploads the installers to it.
 
 ```bash
-# Unsigned builds (development / beta releases)
-git push origin HEAD:release
-
-# Code-signed builds (production releases)
-git push origin HEAD:release-codesigned
+git checkout -b release   # first time only; afterwards: git checkout release
+git merge main
+git push --set-upstream origin release
 ```
 
-**GitHub Actions** will build installers for Windows (`.exe` / `.msi`), macOS (`.dmg`), and Linux (`.AppImage` / `.deb`).
+**GitHub Actions** builds a Windows NSIS installer (`*-setup.exe`), macOS `.dmg` files (Apple Silicon and Intel), and Linux `.AppImage` and `.deb`.
 
-**For code-signed builds**, the following secrets must be set in your GitHub repo settings before pushing to `release-codesigned`:
-- macOS: `APPLE_CERTIFICATE`, `APPLE_CERTIFICATE_PASSWORD`, `APPLE_ID`, `APPLE_APP_SPECIFIC_PASSWORD`, `APPLE_TEAM_ID`
-- Windows: `WINDOWS_CERTIFICATE`, `WINDOWS_CERTIFICATE_PASSWORD`
+**Code signing** is switched on in `kangaroo.config.ts`, not by a branch, and each flag needs its secrets:
+- `macOSCodeSigning: true`: `APPLE_CERTIFICATE`, `APPLE_CERTIFICATE_PASSWORD`, `APPLE_DEV_IDENTITY`, `APPLE_ID_EMAIL`, `APPLE_ID_PASSWORD`, `APPLE_TEAM_ID`
+- `windowsEVCodeSigning: true`: `AZURE_KEY_VAULT_URI`, `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, `AZURE_CLIENT_SECRET`, `AZURE_CERT_NAME`
 
 **Checkpoint:** GitHub Actions run completes. Installers are attached to the GitHub release.
 
@@ -155,10 +142,10 @@ Apply the correct version bump type for each future release.
 ## Quick Reference
 
 ```
-Setup:   git checkout main-0.7  →  npm install
-Dev:     npm run start
-Build:   npm run kangaroo
-Publish: git push origin HEAD:release
+Setup:   git checkout main-0.7  →  yarn setup
+Dev:     yarn dev
+Build:   yarn build:linux | build:mac-arm64 | build:mac-x64 | build:win
+Publish: draft release v<version>, then merge main into release and push
 ```
 
 **See also:** `../../deployment.md` for troubleshooting, CI secrets reference, and alternative deployment options.
