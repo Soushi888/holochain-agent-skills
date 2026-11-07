@@ -74,7 +74,7 @@ hdk = "=0.7.1"
 hdi = "=0.8.1"
 holonix ref=main-0.7
 @holochain/client 0.21.1
-@holochain/hc-spin 0.700.0
+@holochain/hc-spin 0.700.1
 nodejs_24
 ```
 
@@ -84,7 +84,7 @@ Exact pins (`=`) are required. Holochain is sensitive to minor version changes. 
 
 - **`scripts/validate-skill.sh` is the gate.** It checks frontmatter, routing target resolution, orphaned markdown, relative links, version pin consistency, forbidden 0.6-era APIs, retirement of the old JS test harness, and leftover placeholder markers. CI runs it on every push and PR. Run it before committing. Read the script for the exact check names, since it scans for those names as literal strings and repeating them here would trip its own checks.
 - **`skills/holochain/references/example-happ/` is the ground truth.** Every Rust example in the reference files must match an API shape that compiles there. Do not write API shapes from recall.
-- **The stable scaffolder is authoritative for generated-code idiom.** Holonix `main-0.7` ships `hc-scaffold 0.700.0-rc.0`, whose output does not compile against the stable crates. Generated-code examples must match `holochain_scaffolding_cli` **v0.700.0 stable**, installed separately.
+- **The stable scaffolder is authoritative for generated-code idiom.** Holonix `main-0.7` bundles `hc-scaffold 0.700.1` since 2026-10-22, and its entry-type output is identical to v0.700.0's (verified 2026-11-07). Generated-code examples must match stable `holochain_scaffolding_cli` **0.700.x**; a holonix locked before 2026-10-22 bundles the 0.700.0-rc.0, whose output does not compile against the stable crates.
 - **No duplication across files.** Each pattern lives in one canonical file; `SKILL.md` routes to it.
 - **Workflows vs references.** Files in `references/workflows/` are step-by-step sequences; the other `references/*.md` files are reference material. Keep the roles distinct.
 - **Only `skills/` ships.** `npm pack --dry-run` is the check: if a file outside `skills/`, `bin/`, `README.md` or `LICENSE` appears in the tarball, the `files` array in `package.json` is wrong.
@@ -113,7 +113,7 @@ The "Skill version" dropdown in the Field Reports and Q&A forms is not part of t
 - `post_commit` is infallible: must use `#[hdk_extern(infallible)]`
 - `send_remote_signal` is fire-and-forget; `recv_remote_signal` requires an unrestricted cap grant in `init()`
 - Sweettest consistency: `await_consistency(cells)` waits 60s, `await_consistency_s(timeout, cells)` takes an explicit budget, `check_consistency(cells)` does not wait. There is no `await_consistency_60s`
-- Networking is Kitsune2 0.5.0 over iroh, unconditionally. tx5 and WebRTC are gone from `holochain_p2p 0.7`, `signal_url` became `relay_url`, and the `transport-iroh` cargo feature no longer exists on the `holochain` crate
+- Networking is Kitsune2 0.5 over iroh (0.5.2 resolves under holochain 0.7.1), unconditionally. tx5 and WebRTC are gone from `holochain_p2p 0.7`, `signal_url` became `relay_url`, and the `transport-iroh` cargo feature no longer exists on the `holochain` crate
 - `hc sandbox call` was removed in 0.7. Admin API calls moved to the `hc-client` binary (`hc-client call <subcommand> --port`), and its zome-call arguments are positional
 - `genesis_self_check` is written under that name but exported as `genesis_self_check_2`; `GenesisSelfCheckData` aliases V2, which carries only `membrane_proof` and `agent_key`. Call `dna_info()` inside the callback for DNA properties
 - Membrane enforcement that binds is validation of `FlatOp::CreateRecord(OpRecord::AgentValidationPkg { .. })`. The self-check runs on the joiner's own machine and a modified conductor skips it

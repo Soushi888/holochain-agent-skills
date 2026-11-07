@@ -321,6 +321,20 @@ await admin.enableApp({ installed_app_id: "my-app" });   // required, not option
 
 The name `not_started_after_providing_memproofs` reads like a failure, and it is the **normal** outcome. It is distinct from `{ type: "user" }` and `{ type: "never_started" }`, and all three are worth distinguishing in a launcher UI, but only this one means "the conductor did its part and is waiting for you".
 
+From the command line (0.7.1), `hc client` does both routes against a running conductor's admin port. Each `--membrane-proof ROLE=PATH` reads raw proof bytes from a file and may be repeated per role:
+
+```bash
+# Straight away
+hc client call --port $ADMIN_PORT install-app ./my-app.happ --app-id my-app --membrane-proof my_role=./proof.bin
+
+# Deferred: the app is already installed and awaiting proofs
+hc client provide-memproofs --port $ADMIN_PORT --membrane-proof my_role=./proof.bin my-app
+```
+
+`provide-memproofs` also takes `--membrane-proofs <YAML>`, a role-to-bytes map. Enable the app afterwards, for the reason above.
+
+0.7.1 also added two app statuses for source chain restore, `awaiting_restore` and `unrecoverable`, which `@holochain/client` 0.21.1 does not type yet; see `migration.md` § Same DNA, new node.
+
 `ignore_genesis_failure` on `InstallAppRequest` leaves an app installed with empty cells when genesis fails, instead of uninstalling it immediately. That is a diagnostic tool for exactly this class of bug, not a production setting.
 
 ## Membranes are not access control
