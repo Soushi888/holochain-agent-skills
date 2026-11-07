@@ -34,17 +34,24 @@ Entries marked **(verified)** were reproduced on Holochain 0.7.0 while building 
 hc scaffold --version
 ```
 
-Holonix `main-0.7` bundles **`holochain_scaffolding_cli 0.700.0-rc.0`** (verified 2026-08-17 against the holonix `main-0.7` tip, rev `ffcc7c6`). The stable **v0.700.0** released 2026-07-31 and fixes every row in the rc block below. The bundled binary is the one you get by default, so most people hit these.
+Holonix `main-0.7` bundles **`holochain_scaffolding_cli 0.700.1`** since 2026-10-22 (holonix commit `3ae9130`; verified 2026-11-07 by scaffolding a web app, a DNA, a zome and a CRUD entry type with it under holonix rev `a6cdfbd`). It emits `holonix?ref=main-0.7`, `nodejs_24`, `hdi =0.8.1`, `hdk =0.7.1`, `holochain 0.7.1`, `@holochain/client ^0.21.1` and `@holochain/hc-spin ^0.700.1`, so nothing needs re-pinning, and its generated entry-type code is the same as v0.700.0's.
 
-Install the stable scaffolder alongside holonix and use it instead:
+A project whose `flake.lock` pins a holonix older than that still gets **`0.700.0-rc.0`**, and hits the rc block below. Update the lock rather than fixing the output by hand:
 
 ```
-nix run github:holochain/scaffolding/v0.700.0 -- web-app my-app
+nix flake update holonix && nix develop
+hc scaffold --version   # holochain_scaffolding_cli 0.700.1
+```
+
+Outside holonix, run the stable one directly:
+
+```
+nix run github:holochain/scaffolding/v0.700.1 -- web-app my-app
 # or, once:
-cargo install holochain_scaffolding_cli --version 0.700.0
+cargo install holochain_scaffolding_cli --version 0.700.1 --locked
 ```
 
-Stable v0.700.0 emits `holonix?ref=main-0.7`, `nodejs_24`, and stable pins `hdi 0.8.0` / `hdk 0.7.0` / `holochain 0.7.0` (it was released on 2026-07-31, before 0.7.1), and its `validate()` codegen compiles against those crates. Re-pin to `=0.8.1` / `=0.7.1` / `0.7.1` and `@holochain/client` `^0.21.1` after scaffolding: see Step 4 of the Scaffold workflow.
+The previous stable, v0.700.0 (2026-07-31), predates Holochain 0.7.1 and emits `hdi 0.8.0` / `hdk 0.7.0` / `holochain 0.7.0`: re-pin to `=0.8.1` / `=0.7.1` / `0.7.1` and `@holochain/client` `^0.21.1` after scaffolding, as in Step 4 of the Scaffold workflow.
 
 ### Applies to every scaffolder version
 
@@ -53,9 +60,9 @@ Stable v0.700.0 emits `holonix?ref=main-0.7`, `nodejs_24`, and stable pins `hdi 
 | `Integrity zome "<name>" was not found in dna "<dna>"` **(verified)** | `--zome` takes the integrity crate's **package** name, not the directory name. `hc scaffold zome posts` creates directory `posts` with package `posts_integrity` | Pass `--zome posts_integrity` |
 | `hc: command not found` inside `nix develop` | Wrong holonix branch, or the shell did not rebuild | Check the `ref` in `flake.nix`, then `nix flake update && nix develop` |
 
-### Applies to `hc-scaffold 0.700.0-rc.0` only (the holonix-bundled binary)
+### Applies to `hc-scaffold 0.700.0-rc.0` only (holonix locked before 2026-10-22)
 
-Fixed in stable v0.700.0. If you are on stable and see one of these, something else is wrong.
+Fixed in stable v0.700.0 and v0.700.1. If you are on stable and see one of these, something else is wrong.
 
 | Symptom | Cause | Fix |
 |---|---|---|
@@ -116,7 +123,7 @@ Fixed in stable v0.700.0. If you are on stable and see one of these, something e
 
 | Symptom | Cause | Fix |
 |---|---|---|
-| Kangaroo build uses the wrong conductor | Cloned the default branch | `git checkout main-0.7`. `main-0.7` bundles holochain 0.7.1-rc.2 as of 2026-10-14 (read `holochainVersion` in its `kangaroo.config.ts`); `main-0.6` pins 0.6.3 |
+| Kangaroo build uses the wrong conductor | Cloned the default branch | `git checkout main-0.7`. `main-0.7` bundles holochain 0.7.1 since 2026-10-22 (read `holochainVersion` in its `kangaroo.config.ts`); `main-0.6` pins 0.6.3 |
 | App will not start after a version bump | Kangaroo isolates data folders on minor and major bumps by design | Expected. Only patch bumps share a data folder |
 | Windows MSI build fails | Special characters in `PRODUCT_NAME` | Alphanumerics and hyphens only |
 

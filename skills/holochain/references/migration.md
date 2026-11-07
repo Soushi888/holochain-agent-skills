@@ -50,6 +50,24 @@ Anything validation must agree on goes in `modifiers.properties`. See `progenito
 
 ---
 
+## Same DNA, new node: source chain restore (0.7.1)
+
+Everything above is about moving to a **new DNA**. Holochain 0.7.1 added the other case: the same agent, on the same DNA, resuming on a **new conductor** (a new device, a reinstall, a lost disk), by rebuilding its source chain from what the DHT already holds.
+
+Install with the existing agent key and `restore_from_dht: true` (`InstallAppPayload`, `holochain_types-0.7.1/src/app.rs`). Genesis is skipped; each cell fetches the agent's prior chain from the DHT instead.
+
+- `restore_from_dht` **requires `agent_key`**. You must already hold that key in this conductor's keystore, which is the agent key continuity problem above: restore rebuilds the chain, it does not move the key.
+- While it runs, the app is in `AppStatus::AwaitingRestore` and zome calls are rejected (with `ConductorError::CellNotRunning`, whose reason says the cell is restoring).
+- When every cell has restored, the app goes to `Disabled(NeverStarted)`: call `enable_app`, as after a normal install.
+- If restore finds a validated chain integrity warrant against the agent (a proven fork, an invalid op), the app goes to `AppStatus::Unrecoverable(cell_id, reason)`. That state is terminal: there is no repair path, only uninstall.
+- Restore needs peers that hold the chain. With none known yet it keeps retrying rather than failing, so a restore on an empty or brand-new network waits.
+
+From TypeScript, `@holochain/client` 0.21.1 has neither the `restore_from_dht` field on `InstallAppRequest` nor the `awaiting_restore` and `unrecoverable` members of `AppStatus`. A launcher using those types must send the field untyped and handle status values its union does not name. The `hc client call install-app` CLI has no restore flag either; restore goes through the admin API.
+
+Upstream design notes: `docs/design/source_chain_restore.md` in the holochain repository.
+
+---
+
 ## Choosing what to carry across
 
 Options, cheapest first:

@@ -28,7 +28,7 @@ Users receive a single installer (`.exe` / `.dmg` / `.AppImage`) with no Holocha
 | Branch | Holochain version | Status | Use when |
 |--------|-------------------|--------|----------|
 | `main` | 0.7.0 (unchanged since 2026-07-31) | Development | Currently behind `main-0.7`; do not assume it is the newest |
-| `main-0.7` | 0.7.1-rc.2 (since 2026-10-14) | **Recommended** | New production projects |
+| `main-0.7` | 0.7.1 (since 2026-10-22) | **Recommended** | New production projects |
 | `main-0.6` | 0.6.3 | Legacy | Existing 0.6.x apps not yet ported |
 | `main-0.5` | 0.5.x | Archived | Old apps only |
 

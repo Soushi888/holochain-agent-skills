@@ -111,7 +111,7 @@ hdk = "=0.7.1"
 serde = { version = "1", features = ["derive"] }
 ```
 
-If the scaffold generated range versions (`^`), replace them with exact pins (`=`). The stable scaffolder `v0.700.0` predates Holochain 0.7.1 and emits `hdi =0.8.0`, `hdk =0.7.0`, `holochain 0.7.0` and `@holochain/client ^0.21.0`: raise them to `=0.8.1`, `=0.7.1`, `0.7.1` and `^0.21.1`, because a fresh lockfile already resolves the 0.7.1 type crates under the old pins and the capability API changed between the two.
+If the scaffold generated range versions (`^`), replace them with exact pins (`=`). `hc scaffold` 0.700.1, the one holonix `main-0.7` bundles since 2026-10-22, already emits `hdi =0.8.1`, `hdk =0.7.1`, `holochain 0.7.1` and `@holochain/client ^0.21.1`. The older stable `v0.700.0` emits `hdi =0.8.0`, `hdk =0.7.0`, `holochain 0.7.0` and `@holochain/client ^0.21.0`: if `hc scaffold --version` says 0.700.0, raise them to `=0.8.1`, `=0.7.1`, `0.7.1` and `^0.21.1`, because a fresh lockfile already resolves the 0.7.1 type crates under the old pins and the capability API changed between the two.
 
 **Why:** Holochain is sensitive to minor version differences. Range deps can silently break compilation.
 

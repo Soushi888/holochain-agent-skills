@@ -14,7 +14,7 @@
     "build:zomes": "RUSTFLAGS='--cfg getrandom_backend=\"custom\"' cargo build --release --target wasm32-unknown-unknown"
   },
   "devDependencies": {
-    "@holochain/hc-spin": "^0.700.0",
+    "@holochain/hc-spin": "^0.700.1",
     "concurrently": "^6.5.1",
     "get-port-cli": "^3.0.0"
   },
