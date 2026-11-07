@@ -189,18 +189,9 @@ cargo test --package <dna_name>_tests
 
 ### Step 8 — Initial Commit
 
+`hc scaffold web-app` already ran `git init` (branch `main`), staged every file, and wrote a `.gitignore` that ignores editor folders, `/dist/`, `/target/`, `/.cargo/`, every `node_modules/`, `*.happ`, `*.webhapp`, `*.dna`, `*.zip` and the sandbox's `.hc*` files (`src/scaffold/app/gitignore` in `holochain/scaffolding` at `v0.700.1`). Do not overwrite it; append to it only if you add other build output. Then commit:
+
 ```bash
-git init
-
-# Create .gitignore to exclude build artifacts
-cat > .gitignore << 'EOF'
-/target
-/workdir
-/.cargo
-node_modules
-dist
-EOF
-
 git add .
 git commit -m "feat: scaffold initial happ structure"
 ```

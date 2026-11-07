@@ -55,7 +55,7 @@ Work through each category. Flag every issue with severity: **BLOCK** (must fix 
 - [ ] Custom error types implement `From<MyError> for WasmError`
 
 ### Tests (Sweettest)
-- [ ] `await_consistency([&cell_a, &cell_b]).await` called before any cross-agent read
+- [ ] `await_consistency([&cell_a, &cell_b]).await.unwrap()` called before any cross-agent read (it returns a `Result`)
 - [ ] Tests use `#[tokio::test(flavor = "multi_thread")]` and `holochain` dev-dependency with `test_utils` feature
 - [ ] New `#[hdk_extern]` functions have at least one Sweettest test
 
