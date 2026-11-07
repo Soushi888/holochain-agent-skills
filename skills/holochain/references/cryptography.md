@@ -81,7 +81,7 @@ pub fn ed_25519_x_salsa20_poly1305_encrypt(
 
 Its own doc comment carries a warning: understand the downsides of reusing a signing key for encryption before you use it. See <https://doc.libsodium.org/advanced/ed25519-curve25519>. Prefer a dedicated x25519 keypair unless you have a specific reason not to.
 
-**On decryption.** The decrypt side lives in `hdi 0.8.0` (`hdi::x_salsa20_poly1305`), which `hdk 0.7.0` re-exports with `pub use hdi::x_salsa20_poly1305::*` and lists in its prelude, so `use hdk::prelude::*` brings all three into scope:
+**On decryption.** The decrypt side lives in `hdi 0.8.1` (`hdi::x_salsa20_poly1305`), which `hdk 0.7.1` re-exports with `pub use hdi::x_salsa20_poly1305::*` and lists in its prelude, so `use hdk::prelude::*` brings all three into scope:
 
 ```rust
 pub fn x_salsa20_poly1305_decrypt(
@@ -100,7 +100,7 @@ pub fn ed_25519_x_salsa20_poly1305_decrypt(
 ) -> ExternResult<XSalsa20Poly1305Data>
 ```
 
-Only the secretbox variant returns `None` when the ciphertext does not open: `x_salsa20_poly1305_decrypt` in `holochain 0.7.0` turns every keystore error into `None`. The x25519 variant returns `Option` but never `None` in practice; the host function propagates the lair error and wraps every success in `Some`, so a box that does not open comes back as `Err(WasmError { error: Host(..) })`. The ed25519 variant returns an error the same way. Match on the error path for both box variants, not on `None`.
+Only the secretbox variant returns `None` when the ciphertext does not open: `x_salsa20_poly1305_decrypt` in `holochain 0.7.1` turns every keystore error into `None`. The x25519 variant returns `Option` but never `None` in practice; the host function propagates the lair error and wraps every success in `Some`, so a box that does not open comes back as `Err(WasmError { error: Host(..) })`. The ed25519 variant returns an error the same way. Match on the error path for both box variants, not on `None`.
 
 ## Size limit: about 8 KiB per keystore request
 
