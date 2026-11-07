@@ -1,6 +1,6 @@
 {
   "name": "holochain-agent-skills",
-  "version": "1.0.0-rc.1",
+  "version": "1.0.0-rc.2",
   "description": "Agent skills for Holochain hApp development on Holochain 0.7: architecture, zome patterns, scaffolding, Sweettest, client integration and deployment.",
   "keywords": [
     "agent-skill",

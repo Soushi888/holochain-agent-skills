@@ -12,7 +12,7 @@ Run this from the root of the project that should get the skill:
 
 ```bash
 mkdir -p .claude/skills && curl -fsSL \
-  https://github.com/Soushi888/holochain-agent-skills/releases/download/v1.0.0-rc.1/holochain-agent-skills.tar.gz \
+  https://github.com/Soushi888/holochain-agent-skills/releases/download/v1.0.0-rc.2/holochain-agent-skills.tar.gz \
   | tar -xz -C .claude/skills
 ```
 

@@ -1,20 +1,20 @@
 # Release Gate: v1.0.0
 
-Completed 2026-08-17; the toolchain currency rows were re-checked on 2026-10-15 for `v1.0.0-rc.2` (Holochain 0.7.1). Every row records the command run and its result. Rows that cannot apply are marked N/A with the reason, never left blank.
+Completed 2026-08-17 for `v1.0.0-rc.1`; re-measured on 2026-11-07 for `v1.0.0-rc.2` (Holochain 0.7.1): the toolchain currency rows against the registries and upstream branches, the code correctness and routing rows against the composed rc.2 tree. Every row records the command run and its result. Rows that cannot apply are marked N/A with the reason, never left blank.
 
 ## Toolchain currency
 
 | Check | Result | Evidence |
 |---|---|---|
-| `hdk` pin matches crates.io stable | PASS | `hdk 0.7.1`, released 2026-10-14 (re-checked 2026-10-15 for `v1.0.0-rc.2`) |
-| `hdi` pin matches crates.io stable | PASS | `hdi 0.8.1` |
-| `holochain` pin matches crates.io stable | PASS | `holochain 0.7.1` |
-| `@holochain/client` pin matches the newest release on the client's `main-0.7` line (not npm `latest`) | PASS | `0.21.1`, published 2026-10-15. `0.22.0` (2026-10-07) is excluded on purpose: its release notes say the wire types come from a Holochain commit "not in a tagged release yet" (`gh release view v0.22.0 -R holochain/holochain-client-js`) |
-| `@holochain/hc-spin` pin matches npm latest | PASS | `0.700.0` (`latest`; `0.700.1-rc.0` is only on `next`) |
-| holonix ref exists and is the 0.7 line | PASS | branch `main-0.7`, tip `b483c5f0f75e287f1396d0b40496321bc82649e9` (2026-10-14, holochain 0.7.1), matched by the example's `flake.lock` |
-| kangaroo-electron ref bundles 0.7 | PASS | branch `main-0.7`, `kangaroo.config.ts` declares `holochainVersion: '0.7.1-rc.2'` (checked 2026-10-15): bundles the 0.7 line, but a release candidate of 0.7.1 rather than the stable release |
-| Scaffolder guidance names the stable release | PASS | `holochain_scaffolding_cli 0.700.0`, and the skill documents that holonix bundles `0.700.0-rc.0` instead |
-| Companion libraries checked by pin, not tag | PASS | Wind Tunnel tag `v0.7.1` pins hdk 0.6.3 while `main` pins 0.7.0; hREA `happ-0.4.0-beta` pins hdk 0.6.1. Both stated in the skill |
+| `hdk` pin matches crates.io stable | PASS | `hdk 0.7.1`: crates.io API `max_stable_version` and `newest_version` both `0.7.1` (2026-11-07) |
+| `hdi` pin matches crates.io stable | PASS | `hdi 0.8.1`: `max_stable_version` and `newest_version` both `0.8.1` |
+| `holochain` pin matches crates.io stable | PASS | `holochain 0.7.1` is `max_stable_version`; `newest_version` is `0.8.0-dev.14`, a dev line the skill does not target |
+| `@holochain/client` pin matches npm `latest` on the 0.7 line | PASS | `0.21.1`, dist-tag `latest`, published 2026-10-15. `0.22.0` is excluded on purpose: built against an unreleased Holochain (see `references/client.md`) |
+| `@holochain/hc-spin` pin matches npm latest | PASS | `0.700.1`, dist-tag `latest`, published 2026-10-22 |
+| holonix ref exists and is the 0.7 line | PASS | branch `main-0.7`, tip `a6cdfbd31afd2094b7ccc9b3bd7cf9442ec055da` (2026-11-02), its `flake.lock` on `holochain-0.7.1`, matched by the example's `flake.lock` |
+| kangaroo-electron ref bundles 0.7 | PASS | branch `main-0.7` at `0498122` (2026-10-22), `kangaroo.config.ts` declares `holochainVersion: '0.7.1'` |
+| Scaffolder guidance names the stable release | PASS | holonix `a6cdfbd` locks `hc-scaffold` at `v0.700.1` (`77d49d1`), the newest `holochain_scaffolding_cli` on crates.io (2026-10-22). The skill says a `flake.lock` older than 2026-10-22 still gets `0.700.0-rc.0` |
+| Companion libraries checked by pin, not tag | PASS | Wind Tunnel latest release `v0.7.1` pins hdk 0.6.3 while `main` pins hdk 0.7.0, hdi 0.8.0, kitsune2 0.5.2; hREA latest release `happ-0.5.0-beta.1` (2026-09-10) pins hdk =0.7.0, hdi =0.8.0. Both stated in `SKILL.md` |
 
 ## Skill integrity
 
