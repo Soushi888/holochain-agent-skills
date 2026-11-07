@@ -81,7 +81,7 @@ Substitute the five placeholders in every copied file.
 - **Pin holonix to `main-0.7`.** `main` tracks the 0.8 dev line. The template already does this, but `hc scaffold` itself still emits `ref=main`, so check it if you scaffolded with the CLI.
 - **`nodejs_24`**, not 22. Holochain 0.7 moved up.
 - **Exact version pins.** `hdi = "=0.8.1"`, `hdk = "=0.7.1"`. The `=` matters; Holochain is sensitive to minor drift.
-- **Output from the old `hc scaffold` 0.700.0-rc does not compile against the stable crates.** It is what a holonix locked before 2026-10-22 bundles (current holonix bundles 0.700.1). The rc generator emits `ref create @ OpActivity::CreateAgent { ref action }` with `create.agent()`, which matches the rc crates. Stable hdi 0.8.0 carries `agent` as a plain field: `OpActivity::CreateAgent { agent, action }`. The template here is already corrected.
+- **Output from the old `hc scaffold` 0.700.0-rc does not compile against the stable crates.** It is what a holonix locked before 2026-10-23 bundles (current holonix bundles 0.700.1). The rc generator emits `ref create @ OpActivity::CreateAgent { ref action }` with `create.agent()`, which matches the rc crates. Stable hdi (0.8.0, and 0.8.1 unchanged) carries `agent` as a plain field: `OpActivity::CreateAgent { agent, action }`. The template here is already corrected.
 - **Building zomes needs a RUSTFLAGS setting**, see Step 4. Without it the build fails inside `getrandom` with a message about `wasm32-unknown-unknown` not being supported by default, which does not look like a Holochain problem at all.
 
 ---
