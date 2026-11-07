@@ -596,7 +596,7 @@ Full family:
 
 ## Validation (Integrity Crate)
 
-The shape below is taken from `hc scaffold` 0.700.0 output on Holochain 0.7 (0.700.1 generates the same code), trimmed to one entry type and one link type. `hc scaffold` generates the full dispatcher for you; hand-writing it is not the intended path.
+The shape below is taken from `hc scaffold` 0.700.0 output on Holochain 0.7 (0.700.1 generates the same code), trimmed to one entry type (`MyEntry`) and two link types (`MyEntryUpdates`, `AgentToMyEntry`). `hc scaffold` generates the full dispatcher for you; hand-writing it is not the intended path.
 
 ```rust
 #[hdk_extern]

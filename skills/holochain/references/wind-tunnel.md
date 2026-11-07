@@ -44,6 +44,8 @@ Add to `Cargo.toml`:
 [dev-dependencies]
 # No published release targets Holochain 0.7: 0.6.0, 0.7.0 and 0.7.1 all depend on holochain_types 0.6. Track main.
 holochain_wind_tunnel_runner = { git = "https://github.com/holochain/wind-tunnel", branch = "main" }
+# ActionHash, Record, Timestamp and AgentPubKey come from here, not from the runner prelude
+holochain_types = "0.7.1"
 ```
 
 ---
