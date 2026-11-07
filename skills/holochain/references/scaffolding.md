@@ -24,7 +24,7 @@ experimental-features = nix-command flakes
 
 ## Standard flake.nix (Holonix)
 
-Pin to `main-0.7` for HDK 0.7.x stability. The full template below matches what `hc scaffold happ` generates — it includes `bun`, `nodejs_24`, and `binaryen` which are needed for the JS test suite and WASM optimisation:
+Pin to `main-0.7` for HDK 0.7.x stability. The template below matches what `hc scaffold web-app --setup-nix` generates: on top of holonix it adds `nodejs_24` (for the npm scripts and the UI) and `binaryen` (WASM optimisation). It does not add `bun`; the generated scripts call `npm`:
 
 ```nix
 {
@@ -45,7 +45,6 @@ Pin to `main-0.7` for HDK 0.7.x stability. The full template below matches what 
         packages = (with pkgs; [
           nodejs_24
           binaryen
-          bun
         ]);
         shellHook = ''
           export PS1='\[\033[1;34m\][holonix:\w]\$\[\033[0m\] '
@@ -59,7 +58,7 @@ Pin to `main-0.7` for HDK 0.7.x stability. The full template below matches what 
 Enter the dev shell:
 ```bash
 nix develop
-# hc, cargo, rustc, bun, and all Holochain tooling are now available
+# hc, cargo, rustc, node, npm and all Holochain tooling are now available
 ```
 
 **Why pin the branch?** Holonix `main` now tracks the 0.8 dev line. `main-0.7` pins all tooling to HDK 0.7.x compatibility. Mixing versions causes compilation failures.
@@ -73,10 +72,11 @@ The `hc scaffold` CLI generates boilerplate that follows Holochain conventions. 
 ### New hApp
 
 ```bash
-# Create a complete new hApp project
-hc scaffold happ
-# Prompts for: app name, DNA name, coordinator zome name
-# Generates: flake.nix, happ.yaml, dna.yaml, Cargo workspace, first zome pair
+# Create a complete new hApp project: hc scaffold web-app [name] [description]
+hc scaffold web-app my-happ --setup-nix
+# --setup-nix: write flake.nix without asking; -F / --disable-fast-track: skip the first DNA and zome pair
+# Prompts for: template (svelte or headless, unless --template is given), then DNA name and coordinator zome name
+# Generates: flake.nix, workdir/happ.yaml, dnas/<dna>/workdir/dna.yaml, Cargo workspace, first zome pair, ui/ (svelte template only)
 ```
 
 ### New DNA (for multi-DNA hApps)
@@ -84,8 +84,8 @@ hc scaffold happ
 ```bash
 # Add a new DNA to an existing hApp
 hc scaffold dna
-# Prompts for: DNA name
-# Generates: dna.yaml, new zome pair stubs
+# Prompts for: DNA name (snake_case)
+# Generates: dnas/<dna>/workdir/dna.yaml; add zomes afterwards with hc scaffold zome
 ```
 
 ### New Zome Pair
@@ -101,25 +101,26 @@ hc scaffold zome
 
 ```bash
 # Add an entry type to an existing zome pair
-hc scaffold entry-type MyEntry
+hc scaffold entry-type my_entry       # the name must be snake_case
 # Generates: entry struct in integrity, create/get/update/delete stubs in coordinator
-# Also generates a Sweettest test in the DNA's tests crate
+# Also generates a Sweettest test in the coordinator crate's tests/ directory
 ```
 
 ### Link Type
 
 ```bash
-# Add a link type
-hc scaffold link-type AgentToMyEntry
+# Add a link type: hc scaffold link-type [from] [to], each an entry type (snake_case),
+# `agent` or `agent:<role>`; append `:EntryHash` to an entry type to link by entry hash
+hc scaffold link-type agent my_entry
 # Generates: link type variant in integrity, create/get/delete helpers in coordinator
 ```
 
 ### Collection
 
 ```bash
-# Add a collection (global path anchor) for an entry type
-hc scaffold collection
-# Prompts for: entry type to index, collection type (global or by-agent)
+# Add a collection for an entry type: hc scaffold collection [global|by-author] [name] [entry_type]
+hc scaffold collection global all_my_entries my_entry
+# Prompts for any argument left out
 ```
 
 ---
@@ -129,11 +130,11 @@ hc scaffold collection
 After any scaffold operation, always verify the project compiles:
 
 ```bash
-# Generate and verify WASM compilation
-hc s sandbox generate workdir/
+# Compile the zomes to WASM and pack workdir/<app>.happ (generated package.json script)
+npm run build:happ
 
-# Or using the build alias (if package.json scripts are set up)
-bun run build
+# Build, then run the Sweettest suite
+npm test
 ```
 
 **First build is slow** (WASM compilation + wasm-opt). Subsequent builds use the Rust cache. Expect 2-5 minutes for a fresh build.
@@ -142,14 +143,14 @@ bun run build
 
 ## Project Structure After Scaffolding
 
-This is the exact tree `hc scaffold happ` + `hc scaffold entry-type` produces:
+This is the tree `hc scaffold web-app` (with its first DNA and zome pair) + `hc scaffold entry-type` produces:
 
 ```
 my-happ/
-├── flake.nix                     # Nix dev environment (Holonix + bun + nodejs)
+├── flake.nix                     # Nix dev environment (Holonix + nodejs_24 + binaryen)
 ├── Cargo.toml                    # Workspace root — glob members, exact version pins
 ├── Cargo.lock
-├── package.json                  # Root workspace: build:zomes, build:happ, test scripts
+├── package.json                  # Root workspace: start, network, test, build:zomes, build:happ, package
 ├── .gitignore
 ├── workdir/
 │   └── happ.yaml                 # hApp manifest (roles, DNA paths)
@@ -159,7 +160,7 @@ my-happ/
 │       │   └── dna.yaml          # DNA manifest (zome WASM paths)
 │       └── zomes/
 │           ├── integrity/
-│           │   └── my_zome_integrity/
+│           │   └── my_zome/          # crate my_zome_integrity, folder without the suffix
 │           │       ├── Cargo.toml
 │           │       └── src/
 │           │           ├── lib.rs        # EntryTypes enum, LinkTypes enum, validate()
@@ -167,24 +168,20 @@ my-happ/
 │           └── coordinator/
 │               └── my_zome/
 │                   ├── Cargo.toml
-│                   └── src/
-│                       ├── lib.rs        # init(), Signal enum, post_commit, signal_action
-│                       └── my_entry.rs   # create/get/update/delete + revision history
-├── tests/                        # Sweettest suite (Rust)
-│   ├── package.json
-│   ├── vitest.config.ts
-│   ├── tsconfig.json
-│   └── src/my_dna/my_zome/
-│       ├── common.ts
-│       └── my_entry.test.ts
-└── ui/                           # UI scaffold (svelte/vue/react depending on template)
+│                   ├── src/
+│                   │   ├── lib.rs        # init(), Signal enum, post_commit, signal_action
+│                   │   └── my_entry.rs   # create/get/update/delete + revision history
+│                   └── tests/            # Sweettest suite (Rust), run by cargo test
+│                       ├── common.rs
+│                       └── my-entry.rs
+└── ui/                           # UI scaffold (svelte template; absent with headless)
 ```
 
 ---
 
 ## Cargo Workspace Version Pins
 
-Root `Cargo.toml` — `hc scaffold happ` generates glob members so new zome crates are picked up automatically. Always use exact version pins (`=`):
+Root `Cargo.toml`: `hc scaffold web-app` generates glob members so new zome crates are picked up automatically. Always use exact version pins (`=`):
 
 ```toml
 [profile.dev]
@@ -208,12 +205,12 @@ serde = "1.0"
 path = "dnas/my_dna/zomes/coordinator/my_zome"
 
 [workspace.dependencies.my_zome_integrity]
-path = "dnas/my_dna/zomes/integrity/my_zome_integrity"
+path = "dnas/my_dna/zomes/integrity/my_zome"
 ```
 
 **Why exact pins (`=`)?** Holochain zome compilation is extremely sensitive to minor version differences. Range deps (`^`) can silently pull in incompatible patch releases.
 
-**Sweettest test crate** is NOT picked up by the glob — add it explicitly:
+**Sweettest tests need no crate of their own**: the scaffolder writes them into each coordinator crate's `tests/`, which the glob already covers. Only a separate test crate you add by hand, outside the globbed paths, needs an explicit member:
 ```toml
 [workspace]
 members = [
@@ -238,15 +235,15 @@ hc scaffold zome
 # Enter: domain name (e.g., "profiles"), select existing DNA
 
 # 3. Scaffold entry types for the domain
-hc scaffold entry-type Profile
-hc scaffold link-type AgentToProfile
-hc scaffold link-type PathToProfile
-hc scaffold link-type ProfileUpdates
+# entry-type writes the ProfileUpdates link when you answer yes to --link-from-original-to-each-update
+hc scaffold entry-type profile
+hc scaffold link-type agent profile
+hc scaffold collection global all_profiles profile
 
-# 4. Add the new crates to workspace Cargo.toml members list
+# 4. Nothing to register: the workspace members glob picks up the new crates
 
 # 5. Verify compilation
-hc s sandbox generate workdir/
+npm run build:happ
 ```
 
 Proceed to `workflows/implement-zome.md` to fill in the implementation.

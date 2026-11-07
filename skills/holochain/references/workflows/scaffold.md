@@ -35,7 +35,7 @@ mkdir bootstrap-holonix && cd bootstrap-holonix
 ```
 
 ```nix
-# flake.nix — bootstrap only; hc scaffold happ will generate the real one
+# flake.nix: bootstrap only; hc scaffold web-app --setup-nix will generate the real one
 {
   description = "Flake for Holochain app development";
 
@@ -54,7 +54,6 @@ mkdir bootstrap-holonix && cd bootstrap-holonix
         packages = (with pkgs; [
           nodejs_24
           binaryen
-          bun
         ]);
         shellHook = ''
           export PS1='\[\033[1;34m\][holonix:\w]\$\[\033[0m\] '
@@ -80,16 +79,16 @@ nix develop
 
 ```bash
 # From the parent directory (not inside the bootstrap dir), inside nix develop:
-hc scaffold happ
+hc scaffold web-app my-community-app --setup-nix
+# usage: hc scaffold web-app [name] [description] [--setup-nix] [-F | --disable-fast-track]
 ```
 
 The CLI will prompt for:
-- **App name** — e.g., `my-community-app` (kebab-case)
-- **DNA name** — e.g., `community` (the first domain)
-- **Coordinator zome name** — e.g., `posts` (first feature)
-- **UI framework** — select `svelte` (or your preferred framework)
+- **Template**: `svelte` or `headless` (no UI), unless `--template` is passed
+- **DNA name**: e.g., `community` (the first domain, snake_case)
+- **Coordinator zome name**: e.g., `posts` (first feature; the integrity zome becomes `posts_integrity`)
 
-`hc scaffold happ` creates the full project directory with all root files: `flake.nix`, `Cargo.toml`, `happ.yaml` (inside `workdir/`), `package.json`, `.gitignore`, `dnas/`, `tests/`, and a `ui/` scaffold.
+`-F` skips the DNA and zome prompts, leaving you to run `hc scaffold dna` and `hc scaffold zome` yourself. `hc scaffold web-app` creates the full project directory with all root files: `flake.nix`, `Cargo.toml`, `happ.yaml` (inside `workdir/`), `package.json`, `.gitignore`, `dnas/` and, with the svelte template, a `ui/` scaffold. Sweettest tests go in each coordinator crate's `tests/` directory; there is no root `tests/`. It also initialises a git repository and stages the files.
 
 ```bash
 cd <your-app-name>
@@ -119,16 +118,16 @@ If the scaffold generated range versions (`^`), replace them with exact pins (`=
 
 ### Step 5 — Add Entry Types
 
-For each data type in your domain, replace `MyEntry` with your actual domain noun (e.g., `Profile`, `Post`, `Listing`):
+For each data type in your domain, replace `my_entry` with your actual domain noun in snake_case (e.g., `profile`, `post`, `listing`):
 
 ```bash
 # Inside nix develop, from project root
-hc scaffold entry-type MyEntry
+# Answer yes to "link from original to each update" to get the MyEntryUpdates link
+hc scaffold entry-type my_entry
 
-# Then add required link types (rename to match your entry type)
-hc scaffold link-type AgentToMyEntry
-hc scaffold link-type PathToMyEntry
-hc scaffold link-type MyEntryUpdates
+# Then add links and collections: link-type takes [from] [to] (an entry type, or agent)
+hc scaffold link-type agent my_entry
+hc scaffold collection global all_my_entries my_entry
 ```
 
 ---
@@ -136,7 +135,7 @@ hc scaffold link-type MyEntryUpdates
 ### Step 6 — Verify Compilation
 
 ```bash
-hc s sandbox generate workdir/
+npm run build:happ    # cargo build --release --target wasm32-unknown-unknown, then hc app pack workdir
 ```
 
 **Expected:** Build succeeds (may take 5-10 minutes on first run due to WASM compilation).
@@ -151,7 +150,7 @@ hc s sandbox generate workdir/
 
 **Sweettest (Rust) is the primary testing layer.** It runs in-process, is faster, and has first-class HDK 0.7 support. See `../testing.md` for full two-agent patterns.
 
-Add a test crate to your Cargo workspace:
+The scaffolder already writes Sweettest tests into the coordinator crate's `tests/` directory (`dnas/<dna_name>/zomes/coordinator/<zome>/tests/`), and `npm test` runs `build:happ` then `cargo test`. Nothing more is needed to start. A separate test crate is optional; if you want one, add it to your Cargo workspace:
 
 ```bash
 mkdir -p dnas/<dna_name>/tests/src
@@ -231,29 +230,19 @@ hc scaffold zome
 ### Step 3 — Scaffold Entry Types
 
 ```bash
-hc scaffold entry-type Profile
-hc scaffold link-type AgentToProfile
-hc scaffold link-type PathToProfile
-hc scaffold link-type ProfileUpdates
+hc scaffold entry-type profile
+hc scaffold link-type agent profile
+hc scaffold collection global all_profiles profile
 ```
 
-### Step 4 — Register in Cargo Workspace
+### Step 4 — Cargo Workspace
 
-Add new crates to root `Cargo.toml` members:
-
-```toml
-[workspace]
-members = [
-    # ... existing members ...
-    "dnas/my_dna/zomes/integrity/profiles_integrity",
-    "dnas/my_dna/zomes/coordinator/profiles",
-]
-```
+Nothing to add. The generated `members = ["dnas/*/zomes/coordinator/*", "dnas/*/zomes/integrity/*"]` glob already covers the new `dnas/my_dna/zomes/coordinator/profiles` and `dnas/my_dna/zomes/integrity/profiles` crates (the integrity crate is named `profiles_integrity`; its folder drops the suffix). `hc scaffold zome` adds both to `[workspace.dependencies]`.
 
 ### Step 5 — Verify Compilation
 
 ```bash
-hc s sandbox generate workdir/
+npm run build:happ
 ```
 
 ### Step 6 — Commit
@@ -274,19 +263,18 @@ Proceed to `implement-zome.md` to implement the domain.
 nix develop
 
 # New project
-hc scaffold happ
+hc scaffold web-app my-app --setup-nix
 
 # New domain
 hc scaffold zome
-hc scaffold entry-type MyEntry
-hc scaffold link-type AgentToMyEntry
+hc scaffold entry-type my_entry
+hc scaffold link-type agent my_entry
 
 # Verify build
-hc s sandbox generate workdir/
+npm run build:happ
 
-# Run tests
-bun run test:foundation
-bun run test:integration
+# Run tests (build:happ, then cargo test)
+npm test
 ```
 
 **Reference:** `../scaffolding.md` for full setup details, troubleshooting, and workspace structure.
