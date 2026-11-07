@@ -40,44 +40,27 @@ Pin to a versioned branch rather than `main`. `main` follows whatever core is cu
 
 ## Prerequisites
 
-### All platforms
-- Rust toolchain (stable)
-- Node.js + npm
+- Node.js and **Yarn 1** (classic): every Kangaroo script runs through `yarn`, and the repository ships a `yarn.lock` v1.
+- Nothing to compile. The conductor and lair binaries are downloaded, not built, so no Rust toolchain is needed for packaging.
 
-### Linux
-- `webkit2gtk` (for Electron WebView)
-- `libssl-dev`
-
-```bash
-# Ubuntu/Debian
-sudo apt install libwebkit2gtk-4.1-dev libssl-dev
-```
-
-### macOS
-- Xcode Command Line Tools
-
-```bash
-xcode-select --install
-```
-
-### Windows
-- Visual Studio 2019+ with "Desktop development with C++" workload
+Kangaroo's README names no system packages for any platform. Platform-specific requirements come from `electron-builder` (for example macOS signing tools when `macOSCodeSigning` is on), not from Kangaroo itself.
 
 ---
 
 ## Repository Setup
 
 ```bash
-# Clone and checkout the right branch
+# Use the repository as a template or fork it, then check out the right branch
 git clone https://github.com/holochain/kangaroo-electron
 cd kangaroo-electron
 git checkout main-0.7
 
-# Install dependencies (auto-fetches conductor binaries with SHA256 validation)
-npm install
+# Installs dependencies, downloads the conductor and lair binaries, fetches the
+# webhapp if `webhapp` is set in kangaroo.config.ts, and writes the configs
+yarn setup
 ```
 
-**No manual compilation needed.** Binaries (conductor, lair-keystore) are automatically fetched and verified via SHA256 checksums during `npm install`.
+**No manual compilation needed.** `yarn fetch:binaries` (run by `yarn setup`) downloads the `holochain` and `lair-keystore` binaries for `bins.holochainVersion` and checks each against the SHA256 listed per platform under `bins` in `kangaroo.config.ts`.
 
 ---
 
@@ -98,35 +81,43 @@ pouch/
   your-app.webhapp     ← place your built bundle here
 ```
 
-**UI icon requirement:** Include `icon.png` (≥ 256×256 px) at the UI root. Missing icon will cause build warnings or failures on some platforms.
+Kangaroo unpacks the first `.webhapp` it finds in `pouch/` (`scripts/unpack-pouch.js`). For CI, either commit the file (remove `pouch/*.webhapp` from `.gitignore`) or set `webhapp: { url, sha256 }` in `kangaroo.config.ts`, in which case `pouch/` must hold no `.webhapp`.
+
+**UI icon:** Include `icon.png` (at least 256×256 px) at the root of the UI assets. Without it the icon step prints a warning, and the icon is required when `systray` is on.
 
 ### Development mode
 
-For dev mode you don't need a `.webhapp`. Instead, `kangaroo.config.ts` accepts:
-- `happPath` — path to your `.happ` file
-- `uiPort` — port where your UI dev server is running
+For dev mode you don't need a `.webhapp`. Instead, the optional `devConfig` in `kangaroo.config.ts` takes either `{ happPath, uiPort }` (your `.happ` file and the port of your UI dev server) or `{ webhappPath }`.
 
 ---
 
 ## Configuration
 
-**`package.json`**
-```json
-{
-  "name": "your-app-name",
-  "version": "0.1.0"
-}
-```
+Everything is in **`kangaroo.config.ts`** at the repository root, typed by `KangarooConfig` (`src/main/types.ts`). There is no `electron/config.ts`.
 
-**`electron/config.ts`**
 ```typescript
-export const HOLOCHAIN_VERSION = "holochain-0.7.1"; // match your branch
-export const APP_ID = "com.yourorg.yourapp";             // reverse-domain identifier
-export const PRODUCT_NAME = "Your App Name";              // alphanumeric + hyphens on Windows
-export const HAPP_PATH = "pouch/your-app.webhapp";
+export default defineConfig({
+  appId: 'com.yourorg.yourapp',        // unique; defines where user data is stored
+  productName: 'Your App Name',        // shown in the window bar
+  version: '0.1.0',                    // overrides package.json; breaking changes here mean a new conductor
+  passwordMode: 'password-optional',   // 'no-password' | 'password-optional' | 'password-required'
+  macOSCodeSigning: false,
+  windowsEVCodeSigning: false,
+  fallbackToIndexHtml: true,           // for router-based UIs (SvelteKit, vue-router)
+  autoUpdates: true,
+  systray: true,
+  bootstrapUrl: 'https://dev-test-bootstrap2.holochain.org/',
+  relayUrl: 'https://dev-test-bootstrap2.holochain.org/',
+  // networkSeed?, webhapp?: { url, sha256 }, devConfig?, author?
+  bins: {
+    holochainVersion: '0.7.1',         // match your branch
+    holochain: { sha256: { /* per platform */ } },
+    lair: { sha256: { /* per platform */ } },
+  },
+});
 ```
 
-> **Windows MSI warning:** `PRODUCT_NAME` must use only alphanumeric characters and hyphens. Spaces and special characters cause MSI packaging failures.
+`yarn write:configs` refuses to build while `appId` or `productName` still hold the template placeholders, so two apps cannot ship under the default identity by accident. The default bootstrap and relay servers are for testing only; production apps run their own, and changing either URL after release can partition the network.
 
 ---
 
@@ -149,7 +140,7 @@ Kangaroo uses a versioning convention that controls user data isolation:
 
 Holochain 0.6 introduced **iroh** alongside tx5. **0.7 removed tx5 and WebRTC entirely** — iroh over QUIC is the only transport, and it is compiled in unconditionally, so the `transport-iroh` Cargo feature no longer exists.
 
-Your conductor config needs a `relayUrl` and must **not** carry `signalUrl` or `webrtcConfig`:
+Kangaroo writes the conductor config from `templates/conductor-config.yaml`, filling in `bootstrapUrl` and `relayUrl` from `kangaroo.config.ts`. It needs a `relayUrl` and must **not** carry `signalUrl` or `webrtcConfig`:
 
 ```typescript
 // kangaroo.config.ts on main-0.7
@@ -165,35 +156,39 @@ This is not a field that gets ignored. `NetworkConfig` rejects unknown fields, s
 ## CLI Commands
 
 ```bash
-npm install           # install dependencies + auto-fetch conductor binaries
-npm run start         # launch in development mode (hot reload, DevTools available)
-npm run kangaroo      # production build for all configured platforms
+yarn setup             # install dependencies, fetch binaries (and the webhapp if configured), write configs
+yarn dev               # launch in development mode
+yarn build:linux       # production build for this platform: AppImage and .deb
+yarn build:mac-arm64   # Apple Silicon .dmg (yarn build:mac-x64 for Intel)
+yarn build:win         # Windows NSIS installer (*-setup.exe)
 ```
+
+Script names are from `package.json`. Kangaroo's README writes `yarn build:windows`, but the script is `build:win`.
 
 ---
 
 ## CI/CD via GitHub Actions
 
-Kangaroo-Electron includes GitHub Actions workflows. Control builds via branch naming:
+Kangaroo ships one workflow, `.github/workflows/release.yaml`, triggered by a push to the **`release`** branch. Signing is not a separate branch: it is switched on by `macOSCodeSigning` and `windowsEVCodeSigning` in `kangaroo.config.ts`.
 
-| Branch | Build type | Code signing |
-|--------|-----------|--------------|
-| `release` | Cross-platform executables | Unsigned |
-| `release-codesigned` | Cross-platform executables | Signed (requires secrets) |
+1. Give CI the `.webhapp`: commit it in `pouch/`, or set `webhapp: { url, sha256 }`.
+2. Create a draft GitHub release whose tag is `v` plus `version` from `kangaroo.config.ts` (for example `v0.1.0`). The workflow uploads the installers to it.
+3. Merge `main` into `release` and push (`git checkout -b release` the first time).
 
-**Required secrets for code-signed builds:**
-- macOS: `APPLE_CERTIFICATE`, `APPLE_CERTIFICATE_PASSWORD`, `APPLE_ID`, etc.
-- Windows: `WINDOWS_CERTIFICATE`, `WINDOWS_CERTIFICATE_PASSWORD`
+**Secrets, only when the matching signing flag is on:**
+- macOS (`macOSCodeSigning: true`): `APPLE_CERTIFICATE`, `APPLE_CERTIFICATE_PASSWORD`, `APPLE_DEV_IDENTITY`, `APPLE_ID_EMAIL`, `APPLE_ID_PASSWORD`, `APPLE_TEAM_ID`
+- Windows (`windowsEVCodeSigning: true`, an EV certificate in Azure Key Vault signed with AzureSignTool): `AZURE_KEY_VAULT_URI`, `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, `AZURE_CLIENT_SECRET`, `AZURE_CERT_NAME`
 
 ---
 
 ## Auto-Update
 
-Kangaroo uses `@matthme/electron-updater` — a semver-aware fork of `electron-updater`.
+Kangaroo uses `@matthme/electron-updater`, a fork of `electron-updater` whose update check returns the newest release on your app's own semver line rather than the newest release overall.
 
-- Checks GitHub releases on app startup
-- Respects versioning semantics: patch updates install silently; minor/major present a breaking-change notice
-- Requires your GitHub repo to have releases with attached installers (produced by CI)
+- Runs on startup only when `autoUpdates` is `true` and the app is packaged.
+- Offers only updates with the same breaking version as the installed app and a higher version number. A breaking update is never offered, because it would be a different conductor.
+- Never installs silently: the user gets an "Update Available" dialog with **Deny** and **Install and Restart**.
+- Requires your GitHub repository to have releases with the installers attached, which the CI workflow produces.
 
 ---
 
@@ -220,10 +215,9 @@ Kangaroo uses `@matthme/electron-updater` — a semver-aware fork of `electron-u
 | Error / Symptom | Cause | Fix |
 |-----------------|-------|-----|
 | App won't start after version bump | Minor/major bump → new isolated data folder | Expected behavior. User data not migrated automatically — implement migration if needed. |
-| Network connectivity fails | iroh relay not configured | Add `relayUrl` to conductor config in `electron/config.ts` |
+| Network connectivity fails | iroh relay not configured | Set `relayUrl` in `kangaroo.config.ts` |
 | Conductor exits immediately on start | Config still sets `signal_url` / `webrtc_config` / `chc_url` / `db_sync_strategy` | Remove them. 0.7 rejects unknown `NetworkConfig` fields instead of ignoring them. `db_sync_strategy` is now `db_sync_level` (`Full`/`Normal`/`Off`) |
 | Conductor can't read existing data after upgrade | 0.7 renamed its databases and changed DNA hashes | Expected. There is no migration path; clear conductor data (`hc sandbox clean`). You are joining a new network |
-| Binary checksum mismatch | Corrupted or incomplete download | `rm -rf node_modules/.cache && npm install` |
-| Windows MSI build fails | Special characters in `PRODUCT_NAME` | Use only alphanumeric characters and hyphens in `PRODUCT_NAME` |
+| Binary checksum mismatch | Corrupted download, or `bins.holochainVersion` changed without its hashes | `rm -rf resources/bins && yarn fetch:binaries`. After changing `holochainVersion`, run `yarn update:binary-hashes` first |
 
 **Reference:** [developer.holochain.org/get-started/4-packaging-and-distribution/](https://developer.holochain.org/get-started/4-packaging-and-distribution/)

@@ -125,6 +125,5 @@ Fixed in stable v0.700.0 and v0.700.1. If you are on stable and see one of these
 |---|---|---|
 | Kangaroo build uses the wrong conductor | Cloned the default branch | `git checkout main-0.7`. `main-0.7` bundles holochain 0.7.1 since 2026-10-22 (read `holochainVersion` in its `kangaroo.config.ts`); `main-0.6` pins 0.6.3 |
 | App will not start after a version bump | Kangaroo isolates data folders on minor and major bumps by design | Expected. Only patch bumps share a data folder |
-| Windows MSI build fails | Special characters in `PRODUCT_NAME` | Alphanumerics and hyphens only |
 
 See also `deployment.md`, `testing.md` and `scaffolding.md`, which point here rather than repeating these tables.
