@@ -11,7 +11,7 @@ Every committed action carries free metadata in its header. Never duplicate thes
 | Author (agent pubkey) | `record.action().author()` |
 | Timestamp | `record.action().timestamp()` |
 | Entry hash | `record.action().entry_hash()` |
-| Previous action hash | available on `Update`/`Delete` actions |
+| Previous action hash | `record.action().prev_action()` (an `Option`, `None` only for the genesis `Dna` action) |
 
 If you find yourself adding `created_by: AgentPubKey` or `created_at: Timestamp` to an entry struct, remove them — they're already there.
 
@@ -81,15 +81,15 @@ Holochain has two layers of navigable relationships. Understanding the distincti
 |-------|------|---------------|
 | `author` | `AgentPubKey` | `record.action().author()` |
 | `timestamp` | `Timestamp` | `record.action().timestamp()` |
-| `original_action_address` | `ActionHash` | only on `Action::Update` — the original creation action |
-| `deletes_address` | `ActionHash` | only on `Action::Delete` — the action being deleted |
+| `original_action_address` | `ActionHash` | only on `ActionData::Update`: the original creation action |
+| `deletes_address` | `ActionHash` | only on `ActionData::Delete`: the action being deleted |
 
 Walking **backward** through an update chain uses this — no links needed:
 ```rust
 // From any update action hash → find the original
-match record.action().clone() {
-    Action::Update(u) => current_hash = u.original_action_address, // go back one step
-    Action::Create(_) => return Ok(OriginalActionHash(current_hash)), // found it
+match &record.action().data {
+    ActionData::Update(u) => current_hash = u.original_action_address.clone(), // go back one step
+    ActionData::Create(_) => return Ok(OriginalActionHash(current_hash)), // found it
     _ => ...
 }
 ```
@@ -107,8 +107,10 @@ pub struct RecordDetails {
 pub struct EntryDetails {
     pub entry: Entry,
     pub actions: Vec<SignedHashed<Action>>, // all Create/Update actions for this entry
-    pub updates: Vec<SignedHashed<Action>>,
+    pub rejected_actions: Vec<SignedHashed<Action>>, // creates that failed validation
     pub deletes: Vec<SignedHashed<Action>>,
+    pub updates: Vec<SignedHashed<Action>>,
+    pub entry_dht_status: EntryDhtStatus, // Live or Dead
 }
 ```
 
@@ -301,7 +303,7 @@ pub fn archive_my_entry(original_action_hash: ActionHash, previous_action_hash: 
     let mut record = get_latest_my_entry(original_action_hash.clone())?
         .ok_or(wasm_error!(WasmErrorInner::Guest("Entry not found".into())))?;
 
-    let mut entry: MyEntry = record.entry().to_app_option()?.ok_or(
+    let mut entry: MyEntry = record.entry().to_app_option().map_err(|e| wasm_error!(e))?.ok_or(
         wasm_error!(WasmErrorInner::Guest("Expected MyEntry".into()))
     )?;
 
@@ -452,7 +454,7 @@ let filter = ChainFilter::take(chain_top, 10);
 
 `ChainFilter::new`, `until_timestamp` and the `include_cached_entries` builder method remain. A filter with `Take(0)` is now rejected as invalid input rather than returning an empty result.
 
-`must_get_agent_activity` now walks down from the `chain_top` you give it, excludes forked actions, and reports more precisely when it cannot answer deterministically. If you match on `MustGetAgentActivityResponse`, handle `UntilHashMissing`, `UntilHashAfterChainHead`, `UntilTimestampIndeterminate` and `IncompleteChain`.
+`must_get_agent_activity` now walks down from the `chain_top` you give it, excludes forked actions, and reports more precisely when it cannot answer deterministically. Zome code never sees `MustGetAgentActivityResponse`: the HDI function returns `ExternResult<Vec<AgentActivity>>`, and the host turns the conductor-side `IncompleteChain`, `ChainTopNotFound`, `UntilHashMissing` and `UntilTimestampIndeterminate` cases into `UnresolvedDependencies` inside validation and `init`, and into a `WasmError` elsewhere. `UntilHashAfterChainHead` and `UntilTimestampGreaterThanChainHead` are always a `WasmError`.
 
 ### `Record::new()` takes a `RecordEntry`
 
@@ -503,7 +505,7 @@ Four things about this that catch people out, all stated in the 0.7 source:
 3. **`Forked` wins over `Invalid`.** A chain that is both forked and has invalid records reports `Forked`. To see the invalid records too, read `warrants`, or re-query with `ActivityRequest::Full` and inspect `rejected_activity`.
 4. **`Closed` wins over `Valid`.** A chain whose head is a `CloseChain` action reports `Closed`, not `Valid`. Treat it as "this agent will append nothing further", not as an error.
 
-**Design consequence.** Since you can no longer block an agent from your zome, the honest pattern is: query activity before you act on an agent's data where the stakes justify a round trip, and let your own application logic decide to ignore, quarantine, or flag. That is a coordinator-side decision. It cannot live in `validate()`, which has no network access.
+**Design consequence.** Since you can no longer block an agent from your zome, the honest pattern is: query activity before you act on an agent's data where the stakes justify a round trip, and let your own application logic decide to ignore, quarantine, or flag. That is a coordinator-side decision. It cannot live in `validate()`, which has no `get`, `get_links` or `get_agent_activity`, only the deterministic `must_get_*` reads.
 
 ### `delete_link()` — requires GetOptions
 
@@ -528,7 +530,7 @@ let links = get_links(
 
 | Strategy | When to use |
 |----------|-------------|
-| `GetStrategy::Local` | Source chain only — use for `get_my_*` (own authored data, fast, no network) |
+| `GetStrategy::Local` | Local databases only (own source chain plus whatever this node holds or has cached), no network call. Use for `get_my_*` (own authored data, fast) |
 | `GetStrategy::Network` | DHT — use for `get_all_*` (data authored by others, default behavior) |
 
 **Additional LinkQuery features:**
@@ -563,7 +565,7 @@ let records: Vec<Record> = records.into_iter().flatten().collect();
 
 ## `must_get_*` Family (Fail-Fast Gets)
 
-Unlike `get()` which returns `Option`, these return an error immediately if the record is not found.
+Unlike `get()` which returns `Option`, these never return `None`. In a zome call a missing dependency is an immediate error; inside a validation (or `init`) callback it short-circuits the callback with `UnresolvedDependencies`, so validation is retried later.
 
 ```rust
 // In coordinator — authorship check before update:
@@ -798,8 +800,9 @@ let path_hash = path.path_entry_hash()?;
 // Hierarchical paths
 let category_path = Path::from(format!("entries.{}.active", category));
 
-// Ensure path exists (creates the path entry if not present)
-path.ensure()?;
+// Ensure path exists: creates the path's links (never an entry) if not present.
+// `ensure` lives on `HdkPathExt` for `TypedPath`, so give the path a link type first.
+path.typed(LinkTypes::PathLinks)?.ensure()?;
 ```
 
 ---
@@ -842,9 +845,9 @@ pub fn find_original_action_hash(action_hash: ActionHash) -> ExternResult<Origin
     loop {
         let record = get(current_hash.clone(), GetOptions::default())?
             .ok_or(wasm_error!(WasmErrorInner::Guest("Record not found".into())))?;
-        match record.action().clone() {
-            Action::Create(_) => return Ok(OriginalActionHash(current_hash)),
-            Action::Update(u) => { current_hash = u.original_action_address; }
+        match &record.action().data {
+            ActionData::Create(_) => return Ok(OriginalActionHash(current_hash)),
+            ActionData::Update(u) => { current_hash = u.original_action_address.clone(); }
             _ => return Err(wasm_error!(WasmErrorInner::Guest("Unexpected action type".into()))),
         }
     }

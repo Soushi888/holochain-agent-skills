@@ -1,6 +1,6 @@
 # Countersigning
 
-Two or more agents committing the same entry atomically, each to their own source chain. Every type and signature below is taken from the shipped `hdk 0.7.0` and `holochain_integrity_types 0.7.0` sources.
+Two or more agents committing the same entry atomically, each to their own source chain. Every type and signature below is taken from the shipped `hdk 0.7.1` and `holochain_integrity_types 0.7.1` sources.
 
 ## Countersigning is still unstable in 0.7
 
@@ -11,7 +11,7 @@ It sits behind a Cargo feature that is **off by default**:
 hdk = { version = "=0.7.1", features = ["unstable-countersigning"] }
 ```
 
-The conductor must be built with it too. `holochain 0.7.0` declares:
+The conductor must be built with it too. `holochain 0.7.1` declares:
 
 ```toml
 unstable-countersigning = [
@@ -21,9 +21,9 @@ unstable-countersigning = [
 ]
 ```
 
-Default features on `holochain 0.7.0` are `encryption`, `schema`, `wasmer-sys-cranelift`. Countersigning is not among them.
+Default features on `holochain 0.7.1` are `encryption`, `schema`, `wasmer-sys-cranelift`. Countersigning is not among them.
 
-**What this means in practice.** A stock conductor binary, including the one holonix installs and the one Kangaroo bundles, does not have countersigning compiled in. If your hApp needs it you are building and shipping your own conductor. Treat that as an architectural commitment, not a feature flag you flip late. Design an alternative first and reach for countersigning only when nothing else gives you the atomicity you need.
+**What this means in practice.** A conductor built with the crate's default features does not have countersigning compiled in, so check how the binary you run (the one holonix installs, the one Kangaroo bundles) was built before relying on it. If your hApp needs it you are building and shipping your own conductor. Treat that as an architectural commitment, not a feature flag you flip late. Design an alternative first and reach for countersigning only when nothing else gives you the atomicity you need.
 
 ## The session shape
 
@@ -74,9 +74,9 @@ PreflightRequest::try_new(
 )?
 ```
 
-Two constraints the constructor enforces and that are easy to get wrong:
+Two constraints the constructor checks and that are easy to get wrong:
 
-- If there are optional signers, **M must be the majority of N**: strictly greater than `N / 2`, and not larger than `N`.
+- If there are optional signers, M must be at least half of N and not larger than N. The field's doc comment says M must be strictly greater than `N / 2`, but `check_agents_optional` only rejects `2 * M < N` and `M > N`, so M = N / 2 passes. Enforce a strict majority yourself if you need one.
 - If there are optional signers, the **enzyme must be used**, and it must be the first agent in **both** `signing_agents` and `optional_signing_agents`.
 
 ## Session times

@@ -1,6 +1,6 @@
 # Signing and Encryption
 
-App-level cryptography in a zome. Every signature below is taken from the shipped `hdk 0.7.0` and `hdi 0.8.0` sources, not from recall.
+App-level cryptography in a zome. Every signature below is taken from the shipped `hdk 0.7.1` and `hdi 0.8.1` sources, not from recall.
 
 Holochain already signs every action for you. This page is about the cases where that is not enough: proving authorship of something that is not an action, and keeping content confidential from the DHT.
 
