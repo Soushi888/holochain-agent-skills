@@ -93,13 +93,13 @@ Kangaroo unpacks the first `.webhapp` it finds in `pouch/` (`scripts/unpack-pouc
 
 ### Build the `.happ` once, ship the same file on every platform
 
-The DNA hash is a hash of the integrity wasm, so two builds that differ by one byte are two networks. Agents on them never see each other, and nothing reports it.
+The DNA hash covers the integrity zomes and the DNA modifiers (network seed and properties): `DnaDef`'s hashable content is exactly those two (`holochain_zome_types` 0.7.1, `dna_def.rs`). So two builds whose integrity wasm differs by one byte, or two installs with different modifiers, are two networks. Agents on them never see each other, and nothing reports it.
 
-The same source does not always give the same wasm across operating systems. Rust embeds dependency source paths in the wasm for panic messages. `--remap-path-prefix` makes builds on one platform byte-identical, but the remapped paths keep the host's separator (`\` on Windows, `/` elsewhere), so a Windows build and a Linux build of one commit can still differ. A team building Windows installers and a Linux CI from the same commit hit exactly this on Holochain 0.7.0 ([field report](https://github.com/Soushi888/holochain-agent-skills/discussions/12)).
+The same source does not always give the same wasm across operating systems. A team building Windows installers and a Linux CI from the same commit, with the compiler pinned to one exact rustc in `rust-toolchain.toml`, got two different integrity wasm hashes on Holochain 0.7.0 ([field report](https://github.com/Soushi888/holochain-agent-skills/discussions/12)). Their diagnosis: Rust embeds dependency source paths in the wasm for panic messages, and `--remap-path-prefix` made builds on one platform byte-identical but kept the host's separator (`\` on Windows, `/` elsewhere), so the Windows and Linux builds still differed.
 
 So:
 
-- Build the `.happ` (or `.webhapp`) once, in one place, and put that same file in every platform's `pouch/`. Do not let each platform's packaging job compile the zomes.
+- Build the `.webhapp` once, in one place, and put that same file in every platform's `pouch/` (Kangaroo's `scripts/unpack-pouch.js` reads only a `.webhapp` there). Do not let each platform's packaging job compile the zomes.
 - Record the DNA hash of each release and check it in CI, so a rebuild that changes the rules or the bytes fails loudly. `hc dna hash <file>.dna` prints it; from 0.7.1 it takes `-s <network-seed>` and `--role-settings <yaml>`, so you can compute the hash a cell will have once install-time modifiers are applied.
 - If you must build on several platforms, compare the integrity wasm hashes before you ship, and treat any difference as a separate network.
 
