@@ -32,8 +32,8 @@ jobs:
           # v1.0.0-rc.1 is a release candidate and v1.0.0 is not. A candidate
           # must never become what the releases/latest/download URL hands out,
           # so it is marked a GitHub prerelease, which that URL skips. The npm
-          # dist-tag is computed alongside it and is unused while registry
-          # publishing is off; it costs one line and keeps the two in step.
+          # dist-tag is computed alongside it: `next` for a candidate, `latest`
+          # for a release, so a candidate never becomes what `npm install` picks.
           case "${TAG#v}" in
             *-*) PRERELEASE=true;  NPM_TAG=next   ;;
             *)   PRERELEASE=false; NPM_TAG=latest ;;
@@ -69,6 +69,20 @@ jobs:
         with:
           node-version: 24
           registry-url: https://registry.npmjs.org
+
+      - name: npm CLI supports trusted publishing
+        # Trusted publishing (OIDC) needs npm >= 11.5.1 on Node >= 22.14.0
+        # (docs.npmjs.com/trusted-publishers). The npm bundled with Node 24
+        # moves with the runner image, so upgrade when it is older, then print
+        # both versions so every run records which CLI did the publishing.
+        run: |
+          need=11.5.1
+          have=$(npm --version)
+          if [ "$(printf '%s\n%s\n' "$need" "$have" | sort -V | head -n1)" != "$need" ]; then
+            npm install -g "npm@^$need"
+          fi
+          echo "node $(node --version), npm $(npm --version)"
+          [ "$(printf '%s\n%s\n' "$need" "$(npm --version)" | sort -V | head -n1)" = "$need" ]
 
       - name: Build the installer binary
         run: bun run build
@@ -125,17 +139,31 @@ jobs:
           test -s /tmp/release-notes.md
 
       - name: Publish to npm
-        # Off by default. Registry publishing is deferred, not abandoned: the
-        # release archive, the Nix flake and the bundled installer cover every
-        # documented install path, and the package name would change if the
-        # @holochain scope is granted. Re-enable by setting the repository
-        # variable NPM_PUBLISH to true, with an NPM_TOKEN whose "Bypass 2FA"
-        # setting is on (false by default at creation, and required by an
-        # account that enforces 2FA for writes).
-        if: github.event_name == 'push' && vars.NPM_PUBLISH == 'true'
-        run: npm publish --provenance --access public --tag "${{ steps.tag.outputs.npm_tag }}"
+        # Off by default on a tag push: it runs only when the repository
+        # variable NPM_PUBLISH is true. On workflow_dispatch it always runs,
+        # with --dry-run, so the rehearsal shows the exact command a tag would
+        # run without publishing anything.
+        #
+        # Two authentication modes, chosen by whether NPM_TOKEN is set:
+        # - token: the one-time bootstrap. Trusted publishing can only be
+        #   configured on a package that already exists on npm, so the first
+        #   publish needs a granular token with "Bypass 2FA" on.
+        # - oidc: the steady state, once the package has a trusted publisher
+        #   for this repository and release.yml. NPM_TOKEN is deleted, the
+        #   CLI exchanges the job's id-token for a short-lived credential, and
+        #   provenance is generated without a flag.
+        # The npm CLI tries OIDC first and falls back to a token, so "mode"
+        # below is what the job was given, printed for the record.
+        if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && vars.NPM_PUBLISH == 'true')
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_TAG: ${{ steps.tag.outputs.npm_tag }}
+          DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && '--dry-run' || '' }}
+        run: |
+          if [ -n "$NODE_AUTH_TOKEN" ]; then MODE=token; else MODE=oidc; fi
+          echo "npm publish mode=$MODE tag=$NPM_TAG ${DRY_RUN:-(live)}"
+          echo "+ npm publish --access public --tag $NPM_TAG --provenance $DRY_RUN"
+          npm publish --access public --tag "$NPM_TAG" --provenance $DRY_RUN
 
       - name: Create the GitHub release
         # npm and GitHub are independent distribution channels, so a registry
