@@ -4,13 +4,15 @@ Optional. The framework-neutral client surface is in `../client.md`; nothing her
 
 Effect earns its place when zome calls need typed errors, timeouts and retries as data rather than as `try`/`catch` scattered through the UI. On a small app it is overhead.
 
+This note targets **Effect 3.x** (`npm install effect@3`; npm `latest` has been 4.x since 4.0.0 on 2026-10-01). In 4.x, `Effect.timeoutFail` becomes `Effect.timeoutOrElse`, `TimeoutException` becomes `Cause.TimeoutError`, and `Schedule.compose` is no longer exported.
+
 ---
 
 ## Typed zome call
 
 ```typescript
 import { Effect, pipe, Data } from "effect";
-import type { AppWebsocket, CallZomeRequest } from "@holochain/client";
+import type { AppWebsocket, CallZomeRequest, RoleNameCallZomeRequest } from "@holochain/client";
 
 export class ZomeCallError extends Data.TaggedError("ZomeCallError")<{
   readonly fnName: string;
@@ -21,7 +23,7 @@ export class ZomeTimeoutError extends Data.TaggedError("ZomeTimeoutError")<{
   readonly fnName: string;
 }> {}
 
-export function callZome<T>(client: AppWebsocket, req: CallZomeRequest) {
+export function callZome<T>(client: AppWebsocket, req: CallZomeRequest | RoleNameCallZomeRequest) {
   return pipe(
     Effect.tryPromise({
       try: () => client.callZome(req) as Promise<T>,

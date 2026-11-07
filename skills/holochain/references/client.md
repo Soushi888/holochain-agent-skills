@@ -168,7 +168,7 @@ const stats   = await admin.dumpNetworkStats();
 
 `include_revoked` has no default: leave it out and the call does not typecheck. Set it to `false` when you are asking "what can this agent do right now", and `true` only when you are auditing history, because a revoked grant in the list looks exactly like a live one at a glance.
 
-The same calls are available from the command line as `hc-client call ...`. See `debugging.md`.
+The same calls are available from the command line as `hc client call ...` (holonix `main-0.7` builds only the `hc` binary, so there is no standalone `hc-client` on its PATH). See `debugging.md`.
 
 ### App status
 
@@ -202,21 +202,24 @@ const record = await client.callZome({
 
 ## Actions: the header / data split
 
-Holochain 0.7 split every action into a `header` holding the fields all actions share and a `data` payload holding the rest. The same split applies on the JavaScript side, and `SignedActionHashed` is **no longer generic**, because the per-variant action types no longer exist.
+Holochain 0.7 split every action into a `header` holding the fields all actions share and a `data` payload holding the rest. The same split applies on the JavaScript side. `SignedActionHashed<H extends Action = Action>` keeps its type parameter, but `Create`, `Update`, `Delete`, `CreateLink` and the rest are now `ActionData` variants that live under `.data`, not `Action`s, so `SignedActionHashed<Create>` no longer typechecks.
 
 ```typescript
 import type { SignedActionHashed, ActionHash, AgentPubKey, Timestamp } from "@holochain/client";
-import { encodeHashToBase64 } from "@holochain/client";
+import { ActionType, encodeHashToBase64 } from "@holochain/client";
 
 // Common fields live under .header
 const author = encodeHashToBase64(action.hashed.content.header.author);
 const createdAt = action.hashed.content.header.timestamp;
 
-// Action-specific fields live under .data
-const entryHash = action.hashed.content.data.entry_hash;
+// Action-specific fields live under .data, a union narrowed on .type
+const data = action.hashed.content.data;
+if (data.type === ActionType.Create) {
+  const entryHash = data.entry_hash;
+}
 ```
 
-The `Create`, `Update`, `Delete`, `CreateLink` and `DeleteLink` types are no longer exported, so signal types lose their type parameter:
+`Create`, `Update`, `Delete`, `CreateLink` and `DeleteLink` are still exported, as members of the `ActionData` union, so signal types drop the old `SignedActionHashed<Create>` parameter and narrow on `action.hashed.content.data.type` instead:
 
 ```typescript
 export type MyAppSignal =
@@ -311,11 +314,10 @@ Both the app and admin clients return the same `ApiTransportStats` type now, nes
 | `SignedActionHashed<Create>` | `SignedActionHashed` |
 | `action.hashed.content.author` | `action.hashed.content.header.author` |
 | `action.hashed.content.timestamp` | `action.hashed.content.header.timestamp` |
-| `import { Create, CreateLink, ... }` | no longer exported; remove them |
+| `Create`, `CreateLink`, ... as action types | still exported, now `ActionData` variants read from `action.hashed.content.data` |
 | `TransportStats` | `ApiTransportStats` |
 | `stats.connections` | `stats.transport_stats.connections` |
 | `connection.is_webrtc` | `connection.is_direct` |
-| `signalingServerUrl` in `ConnectionServices` | `relayServerUrl` |
 
 ---
 

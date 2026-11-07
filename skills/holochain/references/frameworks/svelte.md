@@ -61,7 +61,7 @@ export class MyEntryStore {
 }
 ```
 
-`$state` on a class field makes the whole array reactive. Reassign it rather than mutating in place when you want the UI to update.
+`$state` on a class field makes the array deeply reactive: reassigning it and mutating it in place (`push`, `splice`, setting an item's property) both update the UI. Declare it with `$state.raw` for a large list you never mutate; raw state updates only on reassignment.
 
 ---
 
@@ -74,12 +74,14 @@ import { getContext, setContext } from "svelte";
 
 const CLIENT_KEY = Symbol("holochain-client");
 
-export function setHolochainClient(client: AppWebsocket) {
+// setContext and getContext must run during component initialisation,
+// never inside an $effect or a .then(), so the context holds the connection promise
+export function setHolochainClient(client: Promise<AppWebsocket>) {
   setContext(CLIENT_KEY, client);
 }
 
-export function getHolochainClient(): AppWebsocket {
-  const client = getContext<AppWebsocket>(CLIENT_KEY);
+export function getHolochainClient(): Promise<AppWebsocket> {
+  const client = getContext<Promise<AppWebsocket>>(CLIENT_KEY);
   if (!client) throw new Error("Holochain client not initialised");
   return client;
 }
@@ -88,25 +90,26 @@ export function getHolochainClient(): AppWebsocket {
 ```svelte
 <!-- src/routes/+layout.svelte -->
 <script lang="ts">
+  import type { Snippet } from "svelte";
   import { AppWebsocket } from "@holochain/client";
   import { setHolochainClient } from "$lib/holochainClient";
 
-  let ready = $state(false);
+  let { children }: { children: Snippet } = $props();
 
-  $effect(() => {
-    AppWebsocket.connect().then((client) => {
-      setHolochainClient(client);
-      ready = true;
-    });
-  });
+  const client = AppWebsocket.connect();
+  setHolochainClient(client);   // during init, synchronously
 </script>
 
-{#if ready}
-  {@render children?.()}
-{:else}
+{#await client}
   <p>Connecting to conductor…</p>
-{/if}
+{:then}
+  {@render children()}
+{:catch error}
+  <p>Could not connect: {String(error)}</p>
+{/await}
 ```
+
+The connection only exists in the browser, so turn off server rendering for this layout with `export const ssr = false;` in `src/routes/+layout.ts`. A component reads the client with `const client = await getHolochainClient()` inside its handlers.
 
 Connect once in the root layout and pass the client down through context. Opening a websocket per component wastes connections and makes signal handling ambiguous.
 
@@ -118,4 +121,4 @@ Connect once in the root layout and pass the client down through context. Openin
 VITE_HC_PORT=8888
 ```
 
-`hc-spin` injects the port when it launches your UI, so in development you rarely set this by hand.
+`hc-spin` does not read this variable. It exposes `window.__HC_LAUNCHER_ENV__` (app interface port, app id and auth token) to the UI it launches, and `AppWebsocket.connect()` with no `url` reads that, so under `hc-spin` you set nothing by hand. A variable like this matters only when you connect outside `hc-spin` and pass `url` and `token` yourself.

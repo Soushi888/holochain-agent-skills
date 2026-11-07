@@ -86,7 +86,7 @@ Versions (current stable):  hdk = "=0.7.1"   hdi = "=0.8.1"   holonix ref=main-0
 Client / tooling:           @holochain/client 0.21.1   hc-spin 0.700.1   nodejs_24
 Dev commands:  nix develop  |  hc sandbox clean  |  cargo test
 Build zomes:   RUSTFLAGS='--cfg getrandom_backend="custom"' cargo build --release --target wasm32-unknown-unknown
-Scaffold:      hc scaffold entry-type MyEntry  |  hc scaffold link-type AgentToMyEntry
+Scaffold:      hc scaffold entry-type my_entry  |  hc scaffold link-type agent my_entry
 ```
 
 ### Toolchain currency
@@ -101,12 +101,12 @@ Verified against live registries and git refs on **2026-11-07**. Re-verify befor
 | `holochain_scaffolding_cli` | 0.700.1 (stable, 2026-10-22), the one holonix `main-0.7` bundles since 2026-10-23 | crates.io / scaffolding `v0.700.1` / holonix `flake.nix` |
 | holonix | branch `main-0.7` | github.com/holochain/holonix |
 | kangaroo-electron | branch `main-0.7` | github.com/holochain/kangaroo-electron |
-| `@holochain/tryorama` | 0.19.2, last published 2026-05-15, **no 0.7 release** | npm | <!-- legacy-ok -->
+| `@holochain-open-dev/tryorama` | 0.21.0 (2026-10-16, on `@holochain/client ^0.21.1`), the 0.7 line of Tryorama. The old `@holochain/tryorama` name stops at 0.19.2 (2026-05-15). Sweettest stays the taught path | npm dist-tags | <!-- legacy-ok -->
 
 
 > **Check the scaffolder before trusting its output.** Since 2026-10-23, holonix `main-0.7` bundles the stable **`hc-scaffold 0.700.1`**, which emits `holonix?ref=main-0.7`, `nodejs_24` and the 0.7.1 pins (`hdi =0.8.1`, `hdk =0.7.1`, `holochain 0.7.1`, `@holochain/client ^0.21.1`, `@holochain/hc-spin ^0.700.1`). A project whose `flake.lock` predates that still gets **`0.700.0-rc.0`**, whose output does not compile against the stable crates. Run `hc scaffold --version`; anything but `0.700.1` means `nix flake update holonix` first. Outside holonix:
 > ```
-> nix run github:holochain/scaffolding/v0.700.1 -- web-app my-app
+> nix run github:holochain/scaffolding/v0.700.1#hc-scaffold -- web-app my-app
 > # or: cargo install holochain_scaffolding_cli --version 0.700.1 --locked
 > ```
 > **Always pass `--version`.** `cargo install holochain_scaffolding_cli` with no version installs **0.4000.4**, a Holochain 0.4-era scaffolder. This crate's version history mixes numbering schemes, and semver orders `0.4000.4` above `0.700.x`, so crates.io reports the old release as the latest stable one. Re-verified 2026-11-07: the crates.io API returns `"max_stable_version":"0.4000.4"` while `0.700.1` is the newest.
@@ -115,7 +115,7 @@ Verified against live registries and git refs on **2026-11-07**. Re-verify befor
 
 ### Companion libraries: what is actually on 0.7
 
-Verified against npm and each repo's `Cargo.toml` on **2026-08-17**. Version numbers in this ecosystem are not reliable signals, so check the pins rather than the tag.
+Verified against npm, crates.io and each repo's `Cargo.toml` on **2026-11-07**. Version numbers in this ecosystem are not reliable signals, so check the pins rather than the tag.
 
 | Project | State on 0.7 | What to do |
 |---|---|---|
@@ -124,7 +124,7 @@ Verified against npm and each repo's `Cargo.toml` on **2026-08-17**. Version num
 | `@holochain-open-dev/signals` | stable is 0.601.0 (2026-01-26); only a `dev` tag at 0.700.0-dev.0 (2026-04-27) | Pre-release only, do not treat as settled |
 | Wind Tunnel | latest tag `v0.7.1` pins hdk **0.6.3**; branch `main` pins hdk 0.7.0 and kitsune2 0.5.2 | Track `main`. See `references/wind-tunnel.md` |
 | hREA | `happ-0.5.0-beta.1` (2026-09-10) pins hdk **=0.7.0** / hdi **=0.8.0** | 0.7 generation, pinned before 0.7.1. Check its lockfile before mixing it with 0.7.1 code (the capability types differ) |
-| Moss / Weave (`@theweave/api`) | 0.7.0-dev.2, dev channel only | Pre-release |
+| Moss / Weave (`@theweave/api`) | `latest` tag is 0.7.0-dev.5 (2026-09-25), `next` is 0.7.0-rc.4 (2026-11-06); no stable 0.7 release | Pre-release |
 | Tauri Holochain plugins | `tauri-plugin-holochain-service` 0.2.3, last published 2025-11-10; `tauri-plugin-holochain` is a 0.0.0 placeholder | Unmaintained against 0.7. Use Kangaroo |
 | Official editor extension, non-JS/Rust bindings | none found | The supported clients are `@holochain/client` and the `holochain_client` crate |
 
@@ -198,10 +198,10 @@ User: "My Sweettest passes alone but fails when another agent reads the entry"
 ```
 User: "Start a new Holochain project for a community coordination app"
 → Loads references/scaffolding.md + references/workflows/scaffold.md
-→ If hc scaffold CLI is available: guides nix flake setup → hc scaffold happ → entry types
+→ If hc scaffold CLI is available: guides nix flake setup → hc scaffold web-app → entry types
 → If no CLI (AI coding session): invokes references/workflows/manual-scaffold.md → writes identical structure
 → Both paths produce the same standard hc scaffold architecture
-→ Verifies compilation with hc s sandbox generate workdir/
+→ Verifies compilation with npm run build:happ
 ```
 
 **Example 4: Implement CRUD for a new zome**
