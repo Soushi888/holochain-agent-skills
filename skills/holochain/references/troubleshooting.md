@@ -11,10 +11,10 @@ Entries marked **(verified)** were reproduced on Holochain 0.7.0 while building 
 | Error text | Cause | Fix |
 |---|---|---|
 | `The wasm32-unknown-unknown targets are not supported by default; you may need to enable the "wasm_js" configuration flag` **(verified)** | Building zomes without the getrandom backend flag. The error names `getrandom`, not Holochain, so it reads like a dependency problem | `RUSTFLAGS='--cfg getrandom_backend="custom"' cargo build --release --target wasm32-unknown-unknown`. `npm run build:zomes` sets this for you |
-| `cannot find type EntryCreationAction in this scope` | 0.6 code on 0.7 | `TypedAction<EntryCreationData>`. See `patterns.md` |
+| `error[E0412]` (type not in scope) naming `EntryCreationAction` | 0.6 code on 0.7 | `TypedAction<EntryCreationData>`. See `patterns.md` |
 | `error[E0599]` naming `StoreEntry` as not found on `FlatOp` | 0.6 FlatOp names | `CreateEntry`. Full rename table in `patterns.md` |
-| `no variant named RegisterCreateLink` / `RegisterDeleteLink` | Both folded into one variant in 0.7 | `FlatOp::Link(OpLink::CreateLink { .. })` |
-| `no method named author found` on an action struct | The per-variant action structs are gone | `action.author()`, or `action.header.author`. Accessors exist on both `Action` and `TypedAction<D>` |
+| `error[E0599]` naming `RegisterCreateLink` / `RegisterDeleteLink` as not found on `FlatOp` | Both folded into one variant in 0.7 | `FlatOp::Link(OpLink::CreateLink { .. })` |
+| `error[E0599]` naming method `author` as not found on an action struct | The per-variant action structs are gone | `action.author()`, or `action.header.author`. Accessors exist on both `Action` and `TypedAction<D>` |
 | `cannot move out of dereference` on a `TypedAction` field | `TypedAction<D>` derefs to its data; you cannot move through a deref | Use `.data` explicitly: `action.data.target_address.into_action_hash()` |
 | `error[E0603]` saying `Action` is private, on `use holochain_zome_types::action::Action` | Crate-root and module re-exports were removed in 0.7: the `action` module only imports `Action` privately from `holochain_integrity_types` | Import from a prelude: `holochain_zome_types::prelude::Action`. Zomes importing only `hdi::prelude` / `hdk::prelude` are unaffected |
 | `feature sqlite-encrypted does not exist` | Renamed in 0.7 | `encryption` |

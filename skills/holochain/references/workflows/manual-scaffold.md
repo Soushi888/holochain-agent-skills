@@ -10,7 +10,7 @@ Templates live in `assets/templates/`. Copy each one to its destination and subs
 
 ## Placeholders
 
-Every template uses the same five:
+Every template uses the same five, except the link-type names noted below the table:
 
 | Placeholder | Meaning | Example |
 |---|---|---|
@@ -19,6 +19,8 @@ Every template uses the same five:
 | `<ZOME_NAME>` | Coordinator zome name; the integrity crate is `<ZOME_NAME>_integrity` | `posts` |
 | `<EntryType>` | Entry struct name, PascalCase | `Post` |
 | `<entry_type>` | Entry name, snake_case | `post` |
+
+The link-type templates are the exception: they keep the example hApp's names, because a link type's name is not built from those placeholders. In `integrity-link_type.rs`, `coordinator-link_type.rs`, `integrity-lib.rs` and `coordinator-lib.rs`, rename `agent_to_posts` (module and validation functions), `AgentToPosts` (the `LinkTypes` variant) and `get_posts_for_agent` / `get_deleted_posts_for_agent` to your link type: `agent_to_<entry_types>` and `AgentTo<EntryTypes>`, with the entry name in the plural, as `hc scaffold link-type` would.
 
 ---
 
@@ -73,7 +75,7 @@ Note the integrity crate directory is `<ZOME_NAME>` while its Cargo package name
 | `sweettest-common.rs` | `.../coordinator/<ZOME_NAME>/tests/common.rs` |
 | `sweettest-entry_type.rs` | `.../coordinator/<ZOME_NAME>/tests/<entry-type>.rs` |
 
-Substitute the five placeholders in every copied file.
+Substitute the five placeholders in every copied file, and rename the link-type names listed under Placeholders.
 
 ---
 

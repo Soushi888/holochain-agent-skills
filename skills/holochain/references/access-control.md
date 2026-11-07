@@ -116,7 +116,7 @@ Grantor side:                              Grantee side:
 | Scenario | Pattern |
 |----------|---------|
 | `recv_remote_signal` open to all agents | `GrantConstraint::Unrestricted` in `init()` |
-| Delegate a specific function to one agent | `GrantConstraint::Assigned` + share secret via private entry |
+| Delegate a specific function to one agent | `GrantConstraint::Assigned`, then hand the secret to the delegate in a `call_remote` payload or a remote signal (a private entry never leaves the author's chain); the delegate stores it with `create_cap_claim(CapClaim { tag, grantor, secret })` |
 | UI calling own zome (same agent, same cell) | No grant needed |
 | Admin-only zome function | Progenitor check in coordinator (see `architecture.md` § DNA Properties) |
 | Public API any agent can call | `GrantConstraint::Unrestricted` in `init()` for that function |

@@ -78,9 +78,12 @@ pub fn is_progenitor(_: ()) -> ExternResult<bool> {
 }
 
 #[hdk_extern]
-pub fn add_administrator(input: EntityAgent) -> ExternResult<bool> {
+pub fn add_administrator(input: EntityActionHashAgents) -> ExternResult<bool> {
     let is_prog = check_if_progenitor()?;
-    let is_admin = check_if_agent_is_administrator(agent_info()?.agent_initial_pubkey)?;
+    let is_admin = check_if_agent_is_administrator(EntityAgent {
+        entity: input.entity.clone(),
+        agent_pubkey: agent_info()?.agent_initial_pubkey,
+    })?;
     let progenitor_configured = DnaProperties::get_progenitor_pubkey()?.is_some();
     let is_bootstrap = !progenitor_configured
         && get_all_administrators_links(input.entity.clone())?.is_empty();
@@ -96,6 +99,8 @@ pub fn add_administrator(input: EntityAgent) -> ExternResult<bool> {
 ```
 
 The `is_bootstrap` branch handles dev mode: when no progenitor is configured and no admins exist yet, the first caller of `add_administrator` is allowed through.
+
+`EntityActionHashAgents { entity, entity_original_action_hash, agent_pubkeys }` and `EntityAgent { entity, agent_pubkey }` are app types, not HDK ones: these are Requests and Offers' (`dnas/requests_and_offers/utils/src/types.rs:122` and `:129` at `b7acda3`), and section 4 passes the same input.
 
 ---
 
