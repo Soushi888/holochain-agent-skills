@@ -5,7 +5,7 @@
     # Pin the versioned branch, not `main`. Holonix `main` tracks the current
     # dev line (0.8 as of August 2026), so `main` silently moves you off 0.7.
     # `hc scaffold` 0.700.0 and 0.700.1 emit this same `main-0.7` ref. Only the
-    # old 0.700.0-rc.0 (bundled by holonix locked before 2026-10-22) emits
+    # old 0.700.0-rc.0 (bundled by holonix locked before 2026-10-23) emits
     # `main`; fix it if you scaffolded with that. See references/troubleshooting.md.
     holonix.url = "github:holochain/holonix?ref=main-0.7";
 

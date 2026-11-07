@@ -98,13 +98,13 @@ Verified against live registries and git refs on **2026-11-07**. Re-verify befor
 | `hdk` / `hdi` / `holochain` | 0.7.1 / 0.8.1 / 0.7.1 (released 2026-10-14) | crates.io, holochain CHANGELOG on branch `main-0.7` |
 | `@holochain/client` | 0.21.1 (2026-10-15). **Not 0.22.x**: 0.22.0 is built against an unreleased Holochain, see `references/client.md` | npm, release notes on github.com/holochain/holochain-client-js |
 | `@holochain/hc-spin` | 0.700.1 (2026-10-22, built against Holochain 0.7.1) | npm dist-tags |
-| `holochain_scaffolding_cli` | 0.700.1 (stable, 2026-10-22), the one holonix `main-0.7` bundles since 2026-10-22 | crates.io / scaffolding `v0.700.1` / holonix `flake.nix` |
+| `holochain_scaffolding_cli` | 0.700.1 (stable, 2026-10-22), the one holonix `main-0.7` bundles since 2026-10-23 | crates.io / scaffolding `v0.700.1` / holonix `flake.nix` |
 | holonix | branch `main-0.7` | github.com/holochain/holonix |
 | kangaroo-electron | branch `main-0.7` | github.com/holochain/kangaroo-electron |
 | `@holochain/tryorama` | 0.19.2, last published 2026-05-15, **no 0.7 release** | npm | <!-- legacy-ok -->
 
 
-> **Check the scaffolder before trusting its output.** Since 2026-10-22, holonix `main-0.7` bundles the stable **`hc-scaffold 0.700.1`**, which emits `holonix?ref=main-0.7`, `nodejs_24` and the 0.7.1 pins (`hdi =0.8.1`, `hdk =0.7.1`, `holochain 0.7.1`, `@holochain/client ^0.21.1`, `@holochain/hc-spin ^0.700.1`). A project whose `flake.lock` predates that still gets **`0.700.0-rc.0`**, whose output does not compile against the stable crates. Run `hc scaffold --version`; anything but `0.700.1` means `nix flake update holonix` first. Outside holonix:
+> **Check the scaffolder before trusting its output.** Since 2026-10-23, holonix `main-0.7` bundles the stable **`hc-scaffold 0.700.1`**, which emits `holonix?ref=main-0.7`, `nodejs_24` and the 0.7.1 pins (`hdi =0.8.1`, `hdk =0.7.1`, `holochain 0.7.1`, `@holochain/client ^0.21.1`, `@holochain/hc-spin ^0.700.1`). A project whose `flake.lock` predates that still gets **`0.700.0-rc.0`**, whose output does not compile against the stable crates. Run `hc scaffold --version`; anything but `0.700.1` means `nix flake update holonix` first. Outside holonix:
 > ```
 > nix run github:holochain/scaffolding/v0.700.1 -- web-app my-app
 > # or: cargo install holochain_scaffolding_cli --version 0.700.1 --locked

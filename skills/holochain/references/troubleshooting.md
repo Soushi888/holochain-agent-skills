@@ -34,7 +34,7 @@ Entries marked **(verified)** were reproduced on Holochain 0.7.0 while building 
 hc scaffold --version
 ```
 
-Holonix `main-0.7` bundles **`holochain_scaffolding_cli 0.700.1`** since 2026-10-22 (holonix commit `3ae9130`; verified 2026-11-07 by scaffolding a web app, a DNA, a zome and a CRUD entry type with it under holonix rev `a6cdfbd`). It emits `holonix?ref=main-0.7`, `nodejs_24`, `hdi =0.8.1`, `hdk =0.7.1`, `holochain 0.7.1`, `@holochain/client ^0.21.1` and `@holochain/hc-spin ^0.700.1`, so nothing needs re-pinning, and its generated entry-type code is the same as v0.700.0's.
+Holonix `main-0.7` bundles **`holochain_scaffolding_cli 0.700.1`** since 2026-10-23 (holonix commit `3ae9130`; verified 2026-11-07 by scaffolding a web app, a DNA, a zome and a CRUD entry type with it under holonix rev `a6cdfbd`). It emits `holonix?ref=main-0.7`, `nodejs_24`, `hdi =0.8.1`, `hdk =0.7.1`, `holochain 0.7.1`, `@holochain/client ^0.21.1` and `@holochain/hc-spin ^0.700.1`, so nothing needs re-pinning, and its generated entry-type code is the same as v0.700.0's.
 
 A project whose `flake.lock` pins a holonix older than that still gets **`0.700.0-rc.0`**, and hits the rc block below. Update the lock rather than fixing the output by hand:
 
@@ -60,7 +60,7 @@ The previous stable, v0.700.0 (2026-07-31), predates Holochain 0.7.1 and emits `
 | `Integrity zome "<name>" was not found in dna "<dna>"` **(verified)** | `--zome` takes the integrity crate's **package** name, not the directory name. `hc scaffold zome posts` creates directory `posts` with package `posts_integrity` | Pass `--zome posts_integrity` |
 | `hc: command not found` inside `nix develop` | Wrong holonix branch, or the shell did not rebuild | Check the `ref` in `flake.nix`, then `nix flake update && nix develop` |
 
-### Applies to `hc-scaffold 0.700.0-rc.0` only (holonix locked before 2026-10-22)
+### Applies to `hc-scaffold 0.700.0-rc.0` only (holonix locked before 2026-10-23)
 
 Fixed in stable v0.700.0 and v0.700.1. If you are on stable and see one of these, something else is wrong.
 

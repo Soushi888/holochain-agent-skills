@@ -1,6 +1,6 @@
 # Networking and Conductor Configuration (0.7)
 
-Everything here is read from `holochain_conductor_api 0.7.0` (`src/config/conductor.rs`), `holochain_p2p 0.7.0` (`Cargo.toml`) and `kitsune2_bootstrap_srv 0.5.0`. If a field is not listed here, check those sources rather than guessing: `ConductorConfig` is `#[serde(deny_unknown_fields)]`, so an invented key is a startup error, not a silent no-op.
+Everything here is read from `holochain_conductor_api 0.7.0` (`src/config/conductor.rs`, byte-identical in 0.7.1), `holochain_p2p 0.7.1` (`Cargo.toml`) and `kitsune2_bootstrap_srv 0.5.0`. If a field is not listed here, check those sources rather than guessing: `ConductorConfig` is `#[serde(deny_unknown_fields)]`, so an invented key is a startup error, not a silent no-op.
 
 ## What changed in 0.7
 
@@ -13,7 +13,7 @@ The whole transport layer was replaced.
 | `webrtc_config` | gone. Use `advanced` for direct Kitsune2 tuning |
 | `transport-iroh` cargo feature on the `holochain` crate | removed. `holochain_p2p` enables `kitsune2/transport-iroh` and `iroh-relay` itself |
 
-Kitsune2 is at `0.5.0` for the whole 0.7.0 line: `kitsune2_api`, `kitsune2_core` and `kitsune2_transport_iroh` all pin `0.5.0`.
+Kitsune2 is on the `0.5` line. `holochain_p2p 0.7.1` requires `^0.5.1` for `kitsune2`, `kitsune2_api`, `kitsune2_core`, `kitsune2_transport_iroh` and `kitsune2_bootstrap_srv`, and a fresh lockfile resolves `0.5.2` (the example hApp's). The 0.7.0 line pinned `0.5.0`.
 
 Client-side, the per-connection `is_webrtc` flag became `is_direct`. See `client.md`.
 

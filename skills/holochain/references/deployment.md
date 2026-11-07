@@ -120,7 +120,7 @@ For dev mode you don't need a `.webhapp`. Instead, `kangaroo.config.ts` accepts:
 
 **`electron/config.ts`**
 ```typescript
-export const HOLOCHAIN_VERSION = "holochain-0.7.0"; // match your branch
+export const HOLOCHAIN_VERSION = "holochain-0.7.1"; // match your branch
 export const APP_ID = "com.yourorg.yourapp";             // reverse-domain identifier
 export const PRODUCT_NAME = "Your App Name";              // alphanumeric + hyphens on Windows
 export const HAPP_PATH = "pouch/your-app.webhapp";
