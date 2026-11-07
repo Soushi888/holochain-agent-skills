@@ -4,7 +4,7 @@ Use this workflow to set up a new Holochain project from scratch, or to add a ne
 
 **Architecture guarantee:** both paths below (CLI and manual) produce the same standard hc scaffold project structure. When `hc scaffold` CLI is available use Path A. When not available (e.g., AI coding session without a running Nix shell), use `manual-scaffold.md` — it writes every file explicitly to produce an identical result.
 
-**Reference:** `../../scaffolding.md` for full details on any step.
+**Reference:** `../scaffolding.md` for full details on any step.
 
 ---
 
@@ -289,4 +289,4 @@ bun run test:foundation
 bun run test:integration
 ```
 
-**Reference:** `../../scaffolding.md` for full setup details, troubleshooting, and workspace structure.
+**Reference:** `../scaffolding.md` for full setup details, troubleshooting, and workspace structure.
