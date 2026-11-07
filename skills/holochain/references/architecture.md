@@ -208,6 +208,7 @@ For the full progenitor implementation — `DnaProperties` struct, `check_if_pro
 ```rust
 // In integrity crate — mark entry as private:
 #[hdk_entry_types]
+#[unit_enum(UnitEntryTypes)]
 pub enum EntryTypes {
     #[entry_type(visibility = "private")]
     MyPrivateEntry(MyPrivateEntry),
@@ -244,7 +245,7 @@ Most hApps can use a single DNA. When to consider multiple DNAs (roles):
 // Call a function in a different role within the same hApp:
 let response = call(
     CallTargetCell::OtherRole("other_role_name".into()),
-    "other_zome".into(),
+    "other_zome",
     "function_name".into(),
     None,
     input,
