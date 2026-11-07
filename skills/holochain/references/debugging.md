@@ -147,7 +147,7 @@ Then read the resulting JSON lines rather than trying to catch the moment live. 
 
 ## Observing a live dev network
 
-A scaffolded `npm start` / `bun start` runs `hc-spin`, which starts a local `kitsune2-bootstrap-srv` (bootstrap and relay on the same `127.0.0.1` port), then runs `hc sandbox generate --run` for each agent against it. Everything below reads what that run leaves on disk or exposes over HTTP. None of it launches anything, which matters when the project's own rules forbid an agent from starting the app.
+A scaffolded `npm start` / `bun start` runs `hc-spin`, which starts a local `kitsune2-bootstrap-srv` (bootstrap and relay on the same `127.0.0.1` port), then makes one `hc sandbox --piped generate --num-sandboxes <N> --app-id <id> --run <ports>` call for all N agents against it (`hc-spin` v0.700.1, `src/main/index.ts`). Everything below reads what that run leaves on disk or exposes over HTTP. None of it launches anything, which matters when the project's own rules forbid an agent from starting the app.
 
 Observed on `holochain 0.7.0`, `hc 0.7.0` and `kitsune2-bootstrap-srv 0.5.0`, running the same two-agent `hc sandbox generate --run` against a local bootstrap server that `hc-spin 0.700.0` issues; commands and output shapes below are from that run.
 
