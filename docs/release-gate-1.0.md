@@ -1,6 +1,6 @@
 # Release Gate: v1.0.0
 
-Completed 2026-08-17 for `v1.0.0-rc.1`; re-measured on 2026-11-07 for `v1.0.0-rc.2` (Holochain 0.7.1): the toolchain currency rows against the registries and upstream branches, the code correctness and routing rows against the composed rc.2 tree. Every row records the command run and its result. Rows that cannot apply are marked N/A with the reason, never left blank.
+Completed 2026-08-17 for `v1.0.0-rc.1`. For `v1.0.0-rc.2` (Holochain 0.7.1), re-measured on 2026-11-07: every Toolchain currency row, against the registries and upstream branches; and in Code correctness and Skill efficacy, the rows that name the composed rc.2 tree or the 0.700.1 probe. Rows that do not say so (Skill integrity, the live end-to-end runs, Community readiness, and Templates match the example) still describe rc.1. Every row records the command run and its result. Rows that cannot apply are marked N/A with the reason, never left blank.
 
 ## Toolchain currency
 
@@ -13,7 +13,7 @@ Completed 2026-08-17 for `v1.0.0-rc.1`; re-measured on 2026-11-07 for `v1.0.0-rc
 | `@holochain/hc-spin` pin matches npm latest | PASS | `0.700.1`, dist-tag `latest`, published 2026-10-22 |
 | holonix ref exists and is the 0.7 line | PASS | branch `main-0.7`, tip `a6cdfbd31afd2094b7ccc9b3bd7cf9442ec055da` (2026-11-02), its `flake.lock` on `holochain-0.7.1`, matched by the example's `flake.lock` |
 | kangaroo-electron ref bundles 0.7 | PASS | branch `main-0.7` at `0498122` (2026-10-22), `kangaroo.config.ts` declares `holochainVersion: '0.7.1'` |
-| Scaffolder guidance names the stable release | PASS | holonix `a6cdfbd` locks `hc-scaffold` at `v0.700.1` (`77d49d1`), the newest `holochain_scaffolding_cli` on crates.io (2026-10-22). The skill says a `flake.lock` older than 2026-10-22 still gets `0.700.0-rc.0` |
+| Scaffolder guidance names the stable release | PASS | holonix `a6cdfbd` locks `hc-scaffold` at `v0.700.1` (`77d49d1`), the newest `holochain_scaffolding_cli` on crates.io (2026-10-22). The skill says a holonix locked before 2026-10-23 (when holonix #351 merged into `main-0.7`) still gets `0.700.0-rc.0` |
 | Companion libraries checked by pin, not tag | PASS | Wind Tunnel latest release `v0.7.1` pins hdk 0.6.3 while `main` pins hdk 0.7.0, hdi 0.8.0, kitsune2 0.5.2; hREA latest release `happ-0.5.0-beta.1` (2026-09-10) pins hdk =0.7.0, hdi =0.8.0. Both stated in `SKILL.md` |
 
 ## Skill integrity
@@ -37,7 +37,7 @@ Completed 2026-08-17 for `v1.0.0-rc.1`; re-measured on 2026-11-07 for `v1.0.0-rc
 | Sweettest suite passes | PASS | `cargo test -- --test-threads 6` on holochain 0.7.1, exit 0: `create_post_with_empty_title_is_rejected`, `create_post`, `create_and_read_post`, `create_and_delete_post`, `create_and_update_post` (5 passed, 33.25s); two-agent `link_a_agent_to_a_post` (1 passed, 10.56s) |
 | Validation rejects invalid data | PASS | `create_post_with_empty_title_is_rejected` asserts `InvalidCommit` with the integrity zome's message. Red certified on #21: with the rule disabled the same suite exits 101 and only that test fails, with `got Ok(Record ..)` |
 | Generated-code idiom matches the stable scaffolder | PASS | A probe app scaffolded with `hc-scaffold 0.700.1` (its `flake.lock`: holonix `a6cdfbd`, `hc-scaffold` `v0.700.1`; web-app, dna `forum`, zome `posts`, entry type `post` with CRUD and link-from-original, fields `title` and `content`), diffed on 2026-11-07: `integrity/posts/src/post.rs` and `coordinator/posts/src/post.rs` are identical to #20's example hApp; both `lib.rs` differ only by the example's `agent_to_posts` link module and its remote-signal grant and `recv_remote_signal`. On the composed tree the integrity `post.rs` also differs by #21's hand-written title rule, nothing else. That generated code is what the suite above compiled and passed |
-| Templates match the example | NOT RE-MEASURED | Not re-derived for rc.2. `validate-skill.sh` passes on the composed tree, which covers pin consistency and the removed 0.7.0 capability types in templates, not template-to-example identity |
+| Templates match the example | NOT RE-MEASURED | Not re-derived for rc.2. `validate-skill.sh` passes on the composed tree, which covers pin consistency and the capability types 0.7.1 removed, in templates, not template-to-example identity |
 
 ## Skill efficacy
 

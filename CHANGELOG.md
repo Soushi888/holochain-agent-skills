@@ -10,7 +10,7 @@ The second 1.0 candidate, built from what the first one met in the field. Every 
 
 ### Breaking
 
-- **Holochain 0.7.1.** Pins move to `hdk = "=0.7.1"`, `hdi = "=0.8.1"` `@holochain/client` `^0.21.1` and `@holochain/hc-spin` `^0.700.1`, on holonix `main-0.7`. 0.7.1 is a patch release with breaking changes: capability grants are now `CapGrant { tag, constraint, capability }` (aliased `CapGrantEntry`), built with `CapGrant::new_zome_call_grant` or `CapGrant::new_direct_signal_grant`, and `ZomeCallCapGrant`, `CapAccess::Unrestricted` and their siblings are gone. Because `hdk 0.7.0` depends on `holochain_zome_types ^0.7.0`, a new project pinned to the rc.1 versions already resolves the 0.7.1 types, and rc.1's own remote-signal `init` fails to compile there (`E0422`, `E0599`). `references/access-control.md` carries the rename table and the upgrade workflow a section for moving from 0.7.0. Grants already on a source chain cannot be read by 0.7.1 and must be re-issued.
+- **Holochain 0.7.1.** Pins move to `hdk = "=0.7.1"`, `hdi = "=0.8.1"`, `@holochain/client` `^0.21.1` and `@holochain/hc-spin` `^0.700.1`, on holonix `main-0.7`. 0.7.1 is a patch release with breaking changes: capability grants are now `CapGrant { tag, constraint, capability }` (aliased `CapGrantEntry`), built with `CapGrant::new_zome_call_grant` or `CapGrant::new_direct_signal_grant`, and `ZomeCallCapGrant`, `CapAccess::Unrestricted` and their siblings are gone. Because `hdk 0.7.0` depends on `holochain_zome_types ^0.7.0`, a new project pinned to the rc.1 versions already resolves the 0.7.1 types, and rc.1's own remote-signal `init` fails to compile there (`E0422`, `E0599`). `references/access-control.md` carries the rename table, and the upgrade workflow carries a section for moving from 0.7.0. Grants already on a source chain cannot be read by 0.7.1 and must be re-issued.
 
 ### Added
 
@@ -23,12 +23,12 @@ The second 1.0 candidate, built from what the first one met in the field. Every 
 - **Source chain restore on a new node** (new in 0.7.1) in `references/migration.md`: `restore_from_dht`, `AwaitingRestore`, `Unrecoverable`, and what `@holochain/client` 0.21.1 does not type yet.
 - **`hc client` membrane proof commands** (0.7.1) in `references/membranes.md`: `--membrane-proof ROLE=PATH` on `install-app`, and `provide-memproofs`.
 - **What the Hearth field report found** ([Discussion #12](https://github.com/Soushi888/holochain-agent-skills/discussions/12), from Ceri John, [@topeuph-ai](https://github.com/topeuph-ai), [#16](https://github.com/Soushi888/holochain-agent-skills/issues/16)): build the `.happ` once and ship the same file on every platform, because a Windows and a Linux build of one commit can give different DNA hashes and so separate networks, and check the released hash with `hc dna hash` (which takes `-s` and `--role-settings` from 0.7.1); sharding a long Sweettest suite in CI; a first `call_remote` after launch that fails until peers are discovered.
-- Routing eval cases R35 to R43, one per new topic. Against rc.1's skill eight of the nine miss (R42 already routed to `testing.md`); all nine hit here, and the full set goes from 31/48 on rc.1 to 40/48.
+- Routing eval cases R35 to R43, one per routed topic. Against rc.1's skill eight of the nine miss (R42 already routed to `testing.md`); all nine hit here, and the full set goes from 31/48 on rc.1 to 40/48.
 
 ### Fixed
 
 - Two older errors in `references/cryptography.md`, found while checking #9: `hdk` 0.7 does have the decrypt functions (re-exported from `hdi`), and validation must not decrypt rather than cannot.
-- The scaffolder caveat: holonix `main-0.7` bundles the stable `hc-scaffold` 0.700.1 since 2026-10-22, so the trap now applies only to a `flake.lock` older than that, rewritten from a real scaffold run.
+- The scaffolder caveat: holonix `main-0.7` bundles the stable `hc-scaffold` 0.700.1 since 2026-10-23, so the trap now applies only to a `flake.lock` older than that, rewritten from a real scaffold run.
 - Kangaroo `main-0.7` bundles holochain 0.7.1 since 2026-10-22; the tables and the upgrade workflow no longer say 0.7.0.
 - `sign_ephemeral` and `verify_signature` are exempt from the 8 KiB keystore limit: they never reach lair.
 - The Kangaroo versioning tables: pre-releases share a data folder within one `major.minor.patch-<id>`, and from 1.0 a minor bump keeps the folder too.
