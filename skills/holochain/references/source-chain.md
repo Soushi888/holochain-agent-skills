@@ -1,6 +1,6 @@
 # Source Chain, Introspection and Utility Host Functions
 
-Read from `hdk 0.7.0` (`src/chain.rs`, `src/info.rs`, `src/time.rs`, `src/random.rs`, `src/validation_receipt.rs`), `hdi 0.8.0` (`src/info.rs`) and `holochain_zome_types 0.7.0` (`src/query.rs`, `src/info.rs`, `src/validate.rs`).
+Read from `hdk 0.7.1` (`src/chain.rs`, `src/info.rs`, `src/time.rs`, `src/random.rs`, `src/validation_receipt.rs`), `hdi 0.8.1` (`src/info.rs`) and `holochain_zome_types 0.7.1` (`src/query.rs`, `src/info.rs`, `src/validate.rs`).
 
 This file covers reading your **own** chain and the ambient facts a zome call can see. Reading **another** agent's chain activity is `get_agent_activity()`, which lives in `patterns.md` alongside `must_get_agent_activity` and chain forks.
 
@@ -39,7 +39,7 @@ Six fields, all defaulted, so `ChainQueryFilter::new()` means "every record, asc
 | `include_entries` | `bool` | Load entry content, not just actions. Default `false` |
 | `order_descending` | `bool` | Default is ascending. `.descending()` flips it |
 
-**Building the `entry_type` argument.** `#[hdk_entry_types]` expands to include `hdk_entry_types_name_registration`, which generates both `impl TryFrom<UnitEntryTypes> for EntryType` and `impl TryFrom<UnitEntryTypes> for AppEntryDef`. Both impls are emitted by `hdk_derive`, in `hdk_derive-0.7.0/src/entry_types_name_registration.rs` (the `EntryType` one at line 184), not by `hdi`. They exist only in expanded code, so grepping `hdi` for them finds nothing. Either form works, and the target type decides which impl is used:
+**Building the `entry_type` argument.** `#[hdk_entry_types]` expands to include `hdk_entry_types_name_registration`, which generates both `impl TryFrom<UnitEntryTypes> for EntryType` and `impl TryFrom<UnitEntryTypes> for AppEntryDef`. Both impls are emitted by `hdk_derive`, in `hdk_derive-0.7.1/src/entry_types_name_registration.rs` (the `EntryType` one at line 184), not by `hdi`. They exist only in expanded code, so grepping `hdi` for them finds nothing. Either form works, and the target type decides which impl is used:
 
 ```rust
 .entry_type(UnitEntryTypes::Post.try_into()?)                    // -> EntryType
@@ -62,7 +62,7 @@ pub struct Record {
 }
 ```
 
-Four accessors cover nearly every use (`holochain_integrity_types-0.7.0/src/record.rs:252-290`):
+Four accessors cover nearly every use (`holochain_integrity_types-0.7.1/src/record.rs:262-285`):
 
 | Call | Returns | Use |
 |---|---|---|
@@ -77,7 +77,7 @@ Four accessors cover nearly every use (`holochain_integrity_types-0.7.0/src/reco
 analogy with Sweettest code, which reaches for `record.signed_action.hashed.hash` because it holds
 the whole record rather than an accessor.
 
-An `Action` in 0.7 is `{ header: ActionHeader, data: ActionData }` (`src/action.rs:532`). The header
+An `Action` in 0.7 is `{ header: ActionHeader, data: ActionData }` (`holochain_integrity_types-0.7.1/src/action.rs:498`). The header
 carries `author`, `timestamp`, `action_seq` and `prev_action` for every variant; `data` carries the
 per-variant payload. Match on `data` to discriminate:
 
@@ -125,7 +125,7 @@ pub fn my_activity(_: ()) -> ExternResult<Vec<MyActivity>> {
 }
 ```
 
-`ActionData` has ten variants (`src/action.rs:476`): `Dna`, `AgentValidationPkg`,
+`ActionData` has ten variants (`holochain_integrity_types-0.7.1/src/action.rs:442`): `Dna`, `AgentValidationPkg`,
 `InitZomesComplete`, `Create`, `Update`, `Delete`, `CreateLink`, `DeleteLink`, `CloseChain`,
 `OpenChain`. When a label is all you need, `action.data.action_type()` returns the `ActionType`
 discriminant without a match.
@@ -141,7 +141,7 @@ Field names, read from `src/action.rs` rather than inferred:
 | `DeleteLinkData` | `base_address`, `link_add_address` |
 
 **Link addresses are `AnyLinkableHash`, not `EntryHash` or `ActionHash`.** Both ends of a
-`CreateLink` use it (`holo_hash-0.7.0/src/aliases.rs`), because a link may point at an entry or at
+`CreateLink` use it (`holo_hash-0.7.1/src/aliases.rs:53`), because a link may point at an entry or at
 an action. `DeleteLinkData` names only the `CreateLink` action it removes, so recovering *which*
 link type was deleted means matching its `link_add_address` against the `CreateLink` records in the
 same query result. Do not reach for `get()` to resolve it: that leaves the source chain and hits the
@@ -208,7 +208,7 @@ Four host functions, each answering a different question. Two live in `hdi` (ava
 pub struct DnaInfoV2 {
     pub name: String,
     pub hash: DnaHash,
-    pub modifiers: DnaModifiers,   // network_seed, properties, origin_time...
+    pub modifiers: DnaModifiers,   // network_seed, properties
     pub zome_names: Vec<ZomeName>,
 }
 pub type DnaInfo = DnaInfoV2;
@@ -255,14 +255,15 @@ pub struct CallInfo {
     /// Chain head as at the call start.
     /// This will not change within a call even if the chain is written to.
     pub as_at: (ActionHash, u32, Timestamp),
-    pub cap_grant: CapGrant,
+    /// The capability grant used to authorize the call.
+    pub cap_grant: CapAccess,
 }
 ```
 
 Two things here that nothing else gives you:
 
 - **`provenance`** is the caller, which for a `call_remote` is the remote agent, not you. This is the field to check when a function should behave differently for remote callers. Comparing `provenance` against `agent_info()?.agent_initial_pubkey` is the "was this called locally" test.
-- **`cap_grant`** is the grant that authorized this call. A function can inspect how it was reached, which is how you distinguish an unrestricted call from one that presented a specific secret. See `access-control.md`.
+- **`cap_grant`** is a `CapAccess`, despite the field name: `ChainAuthor(AgentPubKey)` for the implicit author grant, or `RemoteAgent(Box<CapGrant>)` carrying the grant the caller exercised (`holochain_integrity_types-0.7.1/src/capability/access.rs:18`). A function can inspect how it was reached, which is how you distinguish an unrestricted call from one that presented a specific secret. See `access-control.md`.
 
 `as_at` is the honest chain head for the call: fixed at entry, unmoved by writes during the call.
 
@@ -276,7 +277,7 @@ pub fn sys_time() -> ExternResult<Timestamp>
 
 The host's wall clock, in a coordinator zome. **Forbidden in validation**, along with everything else non-deterministic: a validator running your `validate()` next week must reach the same verdict as one running it now.
 
-When an entry needs a timestamp that validation can check, do not put `sys_time()` in the entry. The action header already carries a timestamp, and validation can read it from `action.header().timestamp`.
+When an entry needs a timestamp that validation can check, do not put `sys_time()` in the entry. The action header already carries a timestamp, and validation can read it with `action.timestamp()` (or the field `action.header.timestamp`); there is no `header()` method.
 
 ### `random_bytes()`
 

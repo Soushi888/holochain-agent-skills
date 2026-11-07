@@ -24,7 +24,7 @@ roles:
       strategy: create
       deferred: false      # provisioned on install; clones created on demand
     dna:
-      bundled: "./group_spaces.dna"
+      path: "./group_spaces.dna"
       modifiers:
         network_seed: ~
       clone_limit: 50      # allow up to 50 clones of this role
@@ -71,11 +71,16 @@ const result = await appClient.callZome({
 ## Enabling / Disabling Clones
 
 ```typescript
+// clone_cell_id is a CloneCellId, not a CellId: { type: "clone_id", value } or { type: "dna_hash", value }
 // Disable a clone (data preserved, cell not running):
-await appClient.disableCloneCell({ clone_cell_id: clonedCellId });
+await appClient.disableCloneCell({
+  clone_cell_id: { type: 'clone_id', value: cloneCell.clone_id },  // e.g. "group_spaces.0"
+});
 
 // Re-enable a previously disabled clone:
-await appClient.enableCloneCell({ clone_cell_id: clonedCellId });
+await appClient.enableCloneCell({
+  clone_cell_id: { type: 'dna_hash', value: cloneCell.cell_id[0] },  // the clone's DNA hash also works
+});
 ```
 
 ## Key Constraints
@@ -83,8 +88,8 @@ await appClient.enableCloneCell({ clone_cell_id: clonedCellId });
 - The maximum number of clones is set by `clone_limit` in `happ.yaml` — plan capacity upfront
 - Each clone's network seed must be unique — using the same seed creates the same network
 - Cloned cells share the same WASM binary but have separate source chains and DHTs
-- `deferred: true` is not required for clonable roles: a provisioned role can be cloned, as Volla Messages does in production with `clone_limit: 100`
-- `deferred` is in fact ignored on install. `AppBundle::resolve_cell` destructures `Create { .. }` without reading it, so the role is provisioned either way (`holochain_types-0.7.0/src/app/app_bundle.rs`)
-- Avoid `strategy: clone_only`. It is the one setting that leaves a role unprovisioned, and assembling `AppInfo` then reaches `unimplemented!()` in `holochain_conductor_api-0.7.0/src/app_interface.rs` (line 548), panicking the conductor
+- `deferred: true` is not required for clonable roles: a provisioned `strategy: create` role is cloneable whenever its `clone_limit` is above 0 (`resolve_cell` passes `clone_limit` straight into `CellProvisioningOp::CreateFromDnaFile`)
+- `deferred` is in fact ignored on install. `AppBundle::resolve_cell` destructures `Create { .. }` without reading it, so the role is provisioned either way (`holochain_types-0.7.1/src/app/app_bundle.rs:115`)
+- Avoid `strategy: clone_only`. It is the one setting that leaves a role unprovisioned, and assembling `AppInfo` then reaches `unimplemented!()` in `holochain_conductor_api-0.7.1/src/app_interface.rs` (line 597), panicking the conductor
 
 **Reference:** [developer.holochain.org/build/cell-cloning/](https://developer.holochain.org/build/cell-cloning/)

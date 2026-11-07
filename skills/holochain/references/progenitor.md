@@ -8,9 +8,9 @@ The progenitor is a single agent whose public key is burned into the DNA at inst
 >
 > `modifiers.properties` is part of the DNA hash and therefore agreed by every member of the network. That is what makes it safe to validate against. Init properties are for seeding a freshly migrated chain with per-install state; see `migration.md`.
 
-Two reference implementations inform this page:
-- **Requests & Offers** (`happenings-community/requests-and-offers`) — coordinator-only enforcement, auto-registration via the first `create_user` call
-- **Moss** (`lightningrodlabs/moss`) — opt-in at group creation, integrity-level enforcement in `validate()`, progenitor key transported via invite-link
+Two reference implementations inform this page (read from `happenings-community/requests-and-offers` at `dev` b7acda3 and `lightningrodlabs/moss` at `main` 83e3904; check them again before relying on a detail):
+- **Requests & Offers**: coordinator-only enforcement (`zomes/integrity/administration/src/lib.rs` deliberately does not check the progenitor in validation), auto-registration inside `create_user` (`zomes/coordinator/users_organizations/src/user.rs`)
+- **Moss**: opt-in at group creation, integrity-level enforcement in `validate()` (`dnas/group/zomes/integrity/group/src/steward_permission.rs`), progenitor key transported via invite-link
 
 ---
 
@@ -63,7 +63,7 @@ pub fn check_if_progenitor() -> ExternResult<bool> {
 
 `check_if_progenitor()` returns `false` when no progenitor is configured. Bootstrap logic (who becomes the first admin in that case) lives in your application code — see section 4.
 
-> **Moss variant:** Moss uses `{ progenitor: AgentPubKeyB64 | null }` (field name `progenitor`, not `progenitor_pubkey`) with the same `Option<String>` Rust type and the same `SerializedBytes` deserialization pattern.
+> **Moss variant:** Moss uses `{ progenitor: AgentPubKeyB64 | null }` (field name `progenitor`, not `progenitor_pubkey`). Its Rust struct is `GroupDnaProperties { progenitor: Option<AgentPubKeyB64> }`, not `Option<String>`, so serde decodes the key and `AgentPubKey::from(b64)` converts it without a fallible parse; the `SerializedBytes` deserialization pattern is the same.
 
 ---
 
@@ -106,7 +106,7 @@ R&O enforces the progenitor check only in the coordinator. Moss additionally enf
 ```rust
 // In integrity validate() — dna_info() is safe here: deterministic, reads own DNA metadata
 fn validate_create_admin_entry(
-    action: Create,
+    action: TypedAction<CreateData>,   // from FlatOp::CreateEntry(OpEntry::CreateEntry { action, .. })
     _entry: AdminEntry,
 ) -> ExternResult<ValidateCallbackResult> {
     match DnaProperties::get()?.progenitor_pubkey {
@@ -114,7 +114,7 @@ fn validate_create_admin_entry(
         Some(progenitor_str) => {
             let progenitor = AgentPubKey::try_from(progenitor_str)
                 .map_err(|e| wasm_error!(WasmErrorInner::Guest(format!("{e}"))))?;
-            if action.author != progenitor {
+            if action.author() != &progenitor {
                 return Ok(ValidateCallbackResult::Invalid(
                     "Only the progenitor can author this entry".into(),
                 ));
@@ -127,8 +127,8 @@ fn validate_create_admin_entry(
 
 **Rules for validation:**
 - `dna_info()` is safe — reads the DNA's own metadata, fully deterministic
-- Use `action.author` — you are validating someone else's action, not checking yourself
-- `get()` (DHT read) is forbidden in validation — breaks determinism; inspect only the op itself
+- Use `action.author()`: you are validating someone else's action, not checking yourself
+- `get()` (DHT read) does not exist in `hdi`; besides the op itself, validation may only read through the deterministic `must_get_*` family (`must_get_entry`, `must_get_action`, `must_get_valid_record`, `must_get_agent_activity`)
 
 **Tradeoff:** Coordinator-only (R&O) is simpler and sufficient for most apps. Integrity enforcement (Moss) is defense-in-depth for higher-security entries where you cannot trust peers to follow coordinator rules.
 
@@ -136,7 +136,7 @@ fn validate_create_admin_entry(
 
 ## 4. Bootstrap and auto-registration
 
-`init()` runs on every agent at install time and has no DHT state to query. It is NOT the place to auto-register the progenitor. Instead, put auto-registration inside your first entity creation function (e.g. `create_user`, `create_profile`):
+`init()` does not run at install time: the conductor runs it lazily, once per cell, before the first zome call into that cell (`Cell::check_or_run_zome_init`, `holochain-0.7.1/src/conductor/cell.rs:781`). Nothing guarantees that the agent has synced any DHT state by then. It is NOT the place to auto-register the progenitor. Instead, put auto-registration inside your first entity creation function (e.g. `create_user`, `create_profile`):
 
 ```rust
 // In coordinator create_user / create_profile — after creating the entry:
@@ -147,18 +147,20 @@ let should_auto_register = if progenitor_configured {
     is_prog  // production: only the progenitor auto-gets admin
 } else {
     // dev / bootstrap: first agent whose profile creation finds no existing admins
+    // external_local_call is an app helper over hdk's call(), not part of the HDK:
+    // define it as in patterns.md § Cross-Zome Calls (argument order: zome, then function)
     let existing_admins: Vec<Link> = external_local_call(
-        "get_all_administrators_links",
         "administration",
+        "get_all_administrators_links",
         "network".to_string(),
     )?;
     existing_admins.is_empty()
 };
 
 if should_auto_register {
-    external_local_call(
-        "add_administrator",
+    let _: bool = external_local_call(
         "administration",
+        "add_administrator",
         EntityActionHashAgents {
             entity: "network".to_string(),
             entity_original_action_hash: OriginalActionHash(profile_hash.clone()),
@@ -199,14 +201,14 @@ integrity:
     progenitor_pubkey: null    # bootstrap mode; set a key for production tests
   zomes:
     - name: my_domain_integrity
-      bundled: "./zomes/integrity/my_domain_integrity.wasm"
+      path: "./zomes/integrity/my_domain_integrity.wasm"
 ```
 
-Get an agent pubkey from a running sandbox:
+Get an agent pubkey from a running conductor (`hc sandbox call` is gone in 0.7; admin calls live under `hc client call`, and `hc sandbox admin-ports` prints the sandbox's admin port):
 
 ```bash
-hc sandbox call --running my-app my_zome get_agent_info '{}' \
-  | jq -r '.agent_initial_pubkey'
+hc client call --port $ADMIN_PORT list-apps \
+  | jq -r '.[] | select(.installed_app_id == "my-app") | .agent_pub_key'
 ```
 
 ### Sweettest
@@ -287,8 +289,8 @@ await adminWebsocket.installApp({
 |---------|-----|
 | Registering progenitor as admin inside `init()` | Put auto-registration in your first entity creation fn (e.g. `create_user`) |
 | Coordinator-only guard for high-security entries | Add integrity enforcement (Moss pattern) if peers must not bypass the coordinator |
-| `agent_info()?.agent_initial_pubkey` used in `validate()` | Use `action.author` — you are checking the action author, not yourself |
-| `get()` (DHT read) inside `validate()` | Forbidden — only `dna_info()`, `zome_info()`, and the op itself are safe |
+| `agent_info()?.agent_initial_pubkey` used in `validate()` | Use `action.author()`: you are checking the action author, not yourself |
+| `get()` (DHT read) inside `validate()` | Not available in `hdi`: use `dna_info()`, `zome_info()`, the op itself, and the deterministic `must_get_*` family |
 | Missing `SerializedBytes` derive on `DnaProperties` | The `.try_into()` deserialization will fail at runtime without it |
 | Missing `value` wrapper in `roles_settings` TypeScript | `{ type: "provisioned", value: { modifiers: { ... } } }` — `value` is required |
 | Joiner substituting their own key as progenitor | Copy the creator's key verbatim (invite-link / config); joiners must match DNA hash |

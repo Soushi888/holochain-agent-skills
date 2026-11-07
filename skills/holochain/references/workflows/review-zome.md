@@ -31,7 +31,7 @@ Work through each category. Flag every issue with severity: **BLOCK** (must fix 
 - [ ] Status enums use a dedicated enum type, not a raw `String`
 
 ### Integrity / Validation
-- [ ] `validate()` uses `op.flattened::<EntryTypes, LinkTypes>()?` not deprecated `op.to_type()`
+- [ ] `validate()` uses `op.flattened::<EntryTypes, LinkTypes>()?` not `op.to_type()`, which was removed in hdi 0.5 and no longer compiles
 - [ ] No non-deterministic reads inside `validate()` — no `get()`, `get_links()`, `agent_info()`, `sys_time()`. `must_get_*` is allowed and is the only sanctioned way to reach DHT state
 - [ ] New entry types are registered in the `#[hdk_entry_types]` enum
 - [ ] New link types are registered in the `#[hdk_link_types]` enum
@@ -44,7 +44,7 @@ Work through each category. Flag every issue with severity: **BLOCK** (must fix 
 
 ### Cross-Zome / Cross-DNA Calls
 - [ ] `CallTargetCell::OtherRole("hrea")` role name matches `workdir/happ.yaml` exactly
-- [ ] `ZomeName(...)` matches the coordinator crate `name` in its `Cargo.toml`
+- [ ] `ZomeName(...)` matches the coordinator zome's `name` in `dna.yaml` (the manifest name is the zome name; the crate name in `Cargo.toml` plays no part)
 - [ ] `ZomeCallResponse` match is exhaustive (5 variants in 0.7: `Ok`, `Unauthorized`, `AuthenticationFailed`, `NetworkError`, `CountersigningSession`. `Unauthorized` carries no `AgentPubKey` in 0.7)
 - [ ] No direct Cargo dependency on the remote DNA's crate — use local mirror structs for serialization
 - [ ] If using shared utility crates: verify intra-DNA and cross-DNA call helpers match the project's established patterns (e.g., wrapper functions in a `utils` crate rather than raw `call()` everywhere)
