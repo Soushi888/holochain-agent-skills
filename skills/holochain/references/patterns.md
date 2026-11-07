@@ -397,7 +397,8 @@ send_remote_signal(MySignal::Ping, vec![recipient_pubkey])?;
 // Receiver callback:
 #[hdk_extern]
 pub fn recv_remote_signal(signal: SerializedBytes) -> ExternResult<()> {
-    let sig: MySignal = signal.try_into()?;
+    // SerializedBytesError has no From into WasmError, so a bare `?` does not compile.
+    let sig = MySignal::try_from(signal).map_err(|e| wasm_error!(e))?;
     emit_signal(sig)?;
     Ok(())
 }
