@@ -76,7 +76,7 @@ Load on demand based on task:
 | `references/debugging.md` | Nothing threw but something is wrong: `RUST_LOG` and `WASM_LOG`, `hc sandbox` subcommands, `hc-client call` admin requests, dump-state, dump-network-stats, dump-network-metrics, calling a zome function by hand |
 | `references/membranes.md` | Membrane proof, `genesis_self_check`, gating who may join, `AgentValidationPkg` validation, `provideMemproofs`, `awaiting_memproofs`, invite codes |
 | `references/source-chain.md` | `query()` and `ChainQueryFilter` over your own chain, `agent_info` / `zome_info` / `call_info` / `dna_info`, scratch-space chain head, `sys_time`, `random_bytes`, tracing from wasm, validation receipts |
-| `references/migration.md` | DNA migration, `init_properties`, `get_init_properties()`, carry over, chain history, carrying data across DNA versions, why 0.7 is a new network, source chain restore on a new node (`restore_from_dht`, `AwaitingRestore`, `Unrecoverable`) |
+| `references/migration.md` | DNA migration, `init_properties`, `get_init_properties()`, carry over, chain history, carrying data across DNA versions, why 0.7 is a new network, source chain restore on a new node, restore, get the source chain back, new machine, new device, lost device, lost laptop, reinstall, same agent key (`restore_from_dht`, `AwaitingRestore`, `Unrecoverable`) |
 | `references/deployment.md` | Packaging, distributing, Kangaroo-Electron, installers, desktop app, versioning, version bump, data resets after update |
 
 ## Quick Reference
