@@ -222,6 +222,32 @@ else
     pass links "all relative markdown links resolve"
 fi
 
+# Backtick paths that name a file relative to the citing file. A link check
+# that reads only ](x.md) cannot see `../../deployment.md` in prose, and that
+# exact dead path shipped twice in workflows/package-and-deploy.md. Only paths
+# starting with ./ or ../ are file-relative; a bare references/x.md is the
+# skill-root convention and is not checked here.
+while IFS= read -r f; do
+    [ -z "$f" ] && continue
+    dir=$(dirname "$f")
+    grep -o '`\.\{1,2\}/[A-Za-z0-9_./-]*\.md\(#[A-Za-z0-9_-]*\)\{0,1\}`' "$f" 2>/dev/null \
+        | sed 's/^`//; s/`$//; s/#.*$//' \
+        | while IFS= read -r link; do
+            [ -z "$link" ] && continue
+            resolved=$(printf '%s/%s' "$dir" "$link" | sed ':a; s|[^/][^/]*/\.\./||; ta; s|/\./|/|g; s|^\./||')
+            if [ ! -f "$resolved" ]; then
+                printf 'FAIL  [links] %s -> `%s` (backtick path, unresolved)\n' "$f" "$link"
+            fi
+        done
+done < "$ALL_MD" > "$TMPDIR_/ticklinkfails"
+
+if [ -s "$TMPDIR_/ticklinkfails" ]; then
+    cat "$TMPDIR_/ticklinkfails"
+    FAILURES=$((FAILURES + $(wc -l < "$TMPDIR_/ticklinkfails" | tr -d ' ')))
+else
+    pass links "all file-relative backtick paths resolve"
+fi
+
 # ---------------------------------------------------------------------------
 # 5. Version pin consistency
 #    The pins declared in SKILL.md frontmatter are authoritative; no file may
