@@ -111,6 +111,14 @@ Direct Kitsune2 module configuration, as raw JSON. The named fields above are me
 
 Use it only when you know which Kitsune2 module you are configuring. Module names seen in the 0.7 sources include `k2Gossip` (with keys like `initiateIntervalMs`) and the bootstrap module's `serverUrl`.
 
+### The first call to a peer right after launch
+
+A conductor that has just started does not know where its peers are yet: it learns them from the bootstrap server and from gossip. Until it has, a `call_remote` to a given agent can fail with a network error even though that agent is online.
+
+This is reported from practice, not measured: in one 0.7 app, a reader opening a capability-granted view right after launch got a network error, and retrying for up to about two minutes fixed it ([field report](https://github.com/Soushi888/holochain-agent-skills/discussions/12)). How long discovery takes depends on the bootstrap server, the relay and the network size.
+
+So treat a failed first `call_remote` as possibly transient: retry with backoff for a bounded time, tell the user the app is still connecting, and only then report the peer as unreachable. Remember that 0.7 also reports a remote function's own `Err` as a network error, so read the message before retrying a refusal.
+
 ## Test-only network switches
 
 `disable_bootstrap`, `disable_publish` and `disable_gossip` exist on `NetworkConfig` but are gated behind the `test-utils` cargo feature. They are how Sweettest builds isolated networks. They are not available on a stock conductor binary, and a config file naming them will fail to parse.

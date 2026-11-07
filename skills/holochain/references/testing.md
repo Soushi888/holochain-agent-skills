@@ -523,6 +523,25 @@ authenticate_app_ws_client(app_sender.clone(), admin_port, "my-app".to_string())
 | `reveal_peer_info` / gossip never starts | Full arc not declared | Call `declare_full_storage_arcs()` on test conductors |
 | Scheduled fn never fires | Scheduler not started | Call `start_scheduler()` or `dispatch_scheduled_fns(timestamp)` |
 | WebSocket auth fails in test | Using wrong port | Use `admin_ws_client()` for admin, `app_ws_client()` for app calls |
+| CI job hits the runner's time limit | A large multi-agent suite runs serially on a small runner | Shard it: see below |
+
+### Sharding a long suite in CI
+
+Every Sweettest test starts real conductors, so a suite grows slow fast. One 0.7 project with over 100 tests, many of them multi-agent, ran past two hours on GitHub Actions' standard runners and came back under the limit split into three jobs ([field report](https://github.com/Soushi888/holochain-agent-skills/discussions/12)).
+
+The split that needs no extra tooling is one job per integration test file, because Cargo builds each file under `tests/` as its own binary:
+
+```yaml
+strategy:
+  fail-fast: false
+  matrix:
+    suite: [post, agent_to_posts]   # one entry per file in tests/, without .rs
+steps:
+  # ... checkout, nix, build the .happ once and share it as an artifact ...
+  - run: cargo test --test ${{ matrix.suite }} -- --test-threads 6
+```
+
+Build the `.happ` in one job and hand it to the shards, so each shard runs tests rather than recompiling wasm. Keep the thread cap from the troubleshooting table on every shard.
 
 ---
 
