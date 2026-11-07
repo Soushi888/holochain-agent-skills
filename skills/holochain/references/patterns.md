@@ -39,7 +39,10 @@ pub enum MyEntryStatus {
     Deleted,
 }
 
-// Register all entry types in one enum (integrity crate)
+// Register all entry types in one enum (integrity crate).
+// Serialize/Deserialize let the coordinator's Signal enum carry it (see Signals below).
+#[derive(Serialize, Deserialize)]
+#[serde(tag = "type")]
 #[hdk_entry_types]
 #[unit_enum(UnitEntryTypes)]
 pub enum EntryTypes {
@@ -54,6 +57,7 @@ pub enum EntryTypes {
 
 ```rust
 // Register all link types in one enum (integrity crate)
+#[derive(Serialize, Deserialize)]
 #[hdk_link_types]
 pub enum LinkTypes {
     // Naming convention: BaseToTarget (PascalCase)
@@ -329,7 +333,7 @@ where
 {
     let zome_call_response = call(
         CallTargetCell::Local,
-        zome_name.into(),
+        zome_name, // generic `Z: Into<ZomeName>`: a `.into()` here cannot be inferred
         fn_name.into(),
         None,
         input,
@@ -574,7 +578,8 @@ let author = original_record.action().author().clone();
 
 // In integrity validation — authorship check:
 let original_action_record = must_get_action(original_action_hash.clone())?;
-if action.action().author() != original_action_record.action().author() {
+// `action` is the TypedAction<UpdateData> the callback received; it has author() directly.
+if action.author() != original_action_record.action().author() {
     return Ok(ValidateCallbackResult::Invalid(
         "Only the original author can update this entry.".to_string(),
     ));
@@ -711,8 +716,8 @@ let prev = action
 `FlatOp` sub-types (`OpEntry`, `OpUpdate`, `OpDelete`, `OpRecord`, `OpActivity`, `OpLink`) now carry a `TypedAction<D>`: the header paired with exactly the data payload the matched variant guarantees. `TypedAction<D>` derefs to its data, so read payload fields straight off it. You only need `.data` to move a field out by value, because you cannot move out of a deref:
 
 ```rust
-action.target_address                      // borrow: fine
-action.data.target_address.into_action_hash()   // move: needs .data
+let target = &action.target_address;                           // borrow: fine
+let target_hash = action.data.target_address.into_action_hash(); // move: needs .data
 ```
 
 **FlatOp variant renames.** The enum now describes what happened rather than what the DHT does about it, and the two link variants folded into one:

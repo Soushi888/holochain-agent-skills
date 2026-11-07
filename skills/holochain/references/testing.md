@@ -83,6 +83,7 @@ tokio = { version = "1", features = ["full"] }
 ### Standard Two-Agent Test
 
 ```rust
+use holochain::prelude::*;
 use holochain::sweettest::*;
 use std::path::Path;
 
@@ -144,7 +145,7 @@ check_consistency([&alice_cell, &bob_cell]).await.unwrap();
 let result: MyOutputType = conductor.call(&cell.zome("my_zome"), "fn_name", payload).await;
 
 // Fallible call — returns ConductorApiResult:
-let result = conductor.call_fallible(&cell.zome("my_zome"), "fn_name", payload).await?;
+let result: MyOutputType = conductor.call_fallible(&cell.zome("my_zome"), "fn_name", payload).await?;
 
 // Cross-agent call — simulate another agent calling with a cap secret:
 let result: MyOutputType = conductor.call_from(
@@ -202,7 +203,7 @@ async fn validate_entry_on_create() {
     let zome = cell.zome("my_coordinator");
 
     // Test validation rejection
-    let result = conductor.call_fallible(&zome, "create_my_entry", invalid_payload).await;
+    let result: Result<ActionHash, _> = conductor.call_fallible(&zome, "create_my_entry", invalid_payload).await;
     assert!(result.is_err());
 }
 ```
@@ -246,14 +247,14 @@ let conductor = SweetConductor::from_config_rendezvous(
 ```rust
 // Install same app for N generated agents (app IDs: "{prefix}0", "{prefix}1", ...)
 let apps: SweetAppBatch = conductor
-    .setup_apps("my-app", 3, &[dna_file])
+    .setup_apps("my-app", 3, &[dna_file.clone()])
     .await.unwrap();
 let cells: Vec<SweetCell> = apps.cells_flattened();
 
 // Install for a specific pre-generated agent
 let agent = SweetAgents::one(conductor.keystore()).await;
 let app: SweetApp = conductor
-    .setup_app_for_agent("my-app", agent.clone(), &[dna_file])
+    .setup_app_for_agent("my-app", agent.clone(), &[dna_file.clone()])
     .await.unwrap();
 
 // Install for multiple pre-generated agents
@@ -274,8 +275,8 @@ let app = conductor.setup_app("my-app", &[dna_with_role]).await.unwrap();
 #### Multi-Cell App (Multiple DNA Roles)
 
 ```rust
-let role_a = ("role_a", dna_a);
-let role_b = ("role_b", dna_b);
+let role_a = ("role_a".to_string(), dna_a);
+let role_b = ("role_b".to_string(), dna_b);
 let app = conductor.setup_app("my-app", &[role_a, role_b]).await.unwrap();
 
 // Destructure cells by role order
@@ -311,7 +312,7 @@ let conductors = SweetConductorBatch::from_config_rendezvous(
 
 // From different configs per conductor
 let configs = vec![config_a, config_b, config_c];
-let conductors = SweetConductorBatch::from_configs_rendezvous(configs).await;
+let mut conductors = SweetConductorBatch::from_configs_rendezvous(configs).await;
 
 // Force peer visibility between two specific conductors (unidirectional)
 conductors.reveal_peer_info(0, 1).await;  // conductor 0 sees conductor 1
@@ -341,7 +342,7 @@ let cloned = conductor.create_clone_cell(
     &"my-app".to_string(),
     CreateCloneCellPayload {
         role_name: "clonable_role".into(),
-        modifiers: DnaModifiersOpt::default().with_network_seed("clone-1"),
+        modifiers: DnaModifiersOpt::default().with_network_seed("clone-1".to_string()),
         membrane_proof: None,
         name: Some("My Clone".to_string()),
     },
@@ -435,7 +436,7 @@ let author_integrated = conductor
 conductor.start_scheduler(Duration::from_millis(100)).await.unwrap();
 
 // Manually fire scheduled functions at a specific timestamp
-let target_time = Timestamp::now() + Duration::from_secs(3600); // 1 hour in future
+let target_time = (Timestamp::now() + Duration::from_secs(3600)).unwrap(); // 1 hour in future
 conductor.dispatch_scheduled_fns(target_time).await;
 
 // Verify effects after scheduler fires
@@ -451,7 +452,7 @@ The full pattern separates integrity (validation) from coordinator (business log
 
 ```rust
 use holochain::sweettest::{SweetInlineZomes, SweetDnaFile};
-use holochain_zome_types::prelude::{EntryDef, EntryVisibility};
+use holochain::prelude::*;
 
 let entry_def = EntryDef {
     id: "my_entry".into(),
@@ -476,8 +477,8 @@ let zomes = SweetInlineZomes::new(vec![entry_def], /* num_link_types */ 0)
         Ok(hash)
     })
     .function("get_entry", |api, hash: ActionHash| {
-        api.get(vec![GetInput::new(hash.into(), GetOptions::default())])
-            .map(|gets| gets.into_iter().next().flatten())
+        let gets = api.get(vec![GetInput::new(hash.into(), GetOptions::default())])?;
+        Ok(gets.into_iter().next().flatten())
     });
 
 let (dna, _, _) = SweetDnaFile::unique_from_inline_zomes(zomes).await;
@@ -492,6 +493,8 @@ let (dna, _, _) = SweetDnaFile::unique_from_inline_zomes(zomes).await;
 For tests that need to verify WebSocket behavior (signals, app interface):
 
 ```rust
+use holochain::conductor::api::{AdminResponse, AppResponse};
+
 // Get admin WebSocket client
 let (admin_sender, _admin_recv) = conductor.admin_ws_client::<AdminResponse>().await;
 

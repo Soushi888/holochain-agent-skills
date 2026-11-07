@@ -59,7 +59,7 @@ pub struct PreflightRequest {
 }
 ```
 
-Build it with the fallible constructor, never by struct literal. `try_new` runs `check_integrity()` for you and returns `Result<Self, CounterSigningError>`:
+Build it with the fallible constructor, never by struct literal. `try_new` runs `check_integrity()` for you and returns `Result<Self, CounterSigningError>`. `CounterSigningError` has no `From` impl into `WasmError`, so map it before `?` in a zome function:
 
 ```rust
 PreflightRequest::try_new(
@@ -71,7 +71,8 @@ PreflightRequest::try_new(
     session_times,
     action_base,
     preflight_bytes,
-)?
+)
+.map_err(|e| wasm_error!(WasmErrorInner::Guest(e.to_string())))?
 ```
 
 Two constraints the constructor checks and that are easy to get wrong:

@@ -88,15 +88,15 @@ Global Teardown
 impl AgentContext<HolochainRunnerContext, HolochainAgentContext<SV>> {
     fn agent_index(&self) -> usize;
     fn agent_name(&self) -> &str;
-    fn runner_context(&self) -> &RunnerContext;
+    fn runner_context(&self) -> &Arc<RunnerContext<HolochainRunnerContext>>;
     fn get(&self) -> &HolochainAgentContext<SV>;        // read agent state
     fn get_mut(&mut self) -> &mut HolochainAgentContext<SV>; // write agent state
 }
 
 // Shared runner context
-impl RunnerContext {
+impl RunnerContext<HolochainRunnerContext> {
     fn reporter(&self) -> Arc<Reporter>;       // metrics sink
-    fn executor(&self) -> &Executor;           // async runtime
+    fn executor(&self) -> &Arc<Executor>;      // async runtime
     fn get_connection_string(&self) -> Option<&str>;
     fn force_stop_scenario(&self);
 }
@@ -104,6 +104,7 @@ impl RunnerContext {
 // Async code inside sync hooks
 ctx.runner_context().executor().execute_in_place(async {
     // Holochain client calls (async) go here
+    Ok(())
 })?;
 ```
 
@@ -130,7 +131,7 @@ let result: MyType = call_zome(ctx, "zome_name", "fn_name", payload)?;
 ### Custom Metrics (ReportMetric)
 
 ```rust
-use wind_tunnel_runner::prelude::ReportMetric;
+use holochain_wind_tunnel_runner::prelude::ReportMetric;
 
 let metric = ReportMetric::new("sync_lag")          // auto-prefixed: wt.custom.sync_lag
     .with_tag("agent", agent_pubkey.to_string())
@@ -227,7 +228,7 @@ impl UserValuesConstraint for ScenarioValues {}
 fn agent_behaviour_write(
     ctx: &mut AgentContext<HolochainRunnerContext, HolochainAgentContext<ScenarioValues>>,
 ) -> HookResult {
-    call_zome(ctx, "timed", "create_timed_entry", Timestamp::now())?;
+    let _: ActionHash = call_zome(ctx, "timed", "create_timed_entry", Timestamp::now())?;
     ctx.get_mut().scenario_values.sent_actions += 1;
     let metric = ReportMetric::new("sent_count")
         .with_field("value", ctx.get().scenario_values.sent_actions);
