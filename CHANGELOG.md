@@ -4,9 +4,9 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [1.0.0-rc.2] - Unreleased
+## [1.0.0-rc.2] - 2026-11-11
 
-The second 1.0 candidate, built from what the first one met in the field. Every change below traces to a report: an issue, a post on X, or a release upstream that broke the candidate on a fresh project.
+The second 1.0 candidate, built from what the first one met in the field. Most changes below trace to a report: an issue, a post on X, or a release upstream that broke the candidate on a fresh project.
 
 ### Breaking
 
@@ -24,8 +24,8 @@ The second 1.0 candidate, built from what the first one met in the field. Every 
 - **`hc client` membrane proof commands** (0.7.1) in `references/membranes.md`: `--membrane-proof ROLE=PATH` on `install-app`, and `provide-memproofs`.
 - **What the Hearth field report found** ([Discussion #12](https://github.com/Soushi888/holochain-agent-skills/discussions/12), from Ceri John, [@topeuph-ai](https://github.com/topeuph-ai), [#16](https://github.com/Soushi888/holochain-agent-skills/issues/16)): build the `.happ` once and ship the same file on every platform, because a Windows and a Linux build of one commit can give different DNA hashes and so separate networks, and check the released hash with `hc dna hash` (which takes `-s` and `--role-settings` from 0.7.1); sharding a long Sweettest suite in CI; a first `call_remote` after launch that fails until peers are discovered.
 - Routing eval cases R35 to R43, one per routed topic. Against rc.1's skill eight of the nine miss (R42 already routed to `testing.md`); all nine hit here, and the full set goes from 31/48 on rc.1 to 40/48.
-
 - **npm publishing through trusted publishing** ([#24](https://github.com/Soushi888/holochain-agent-skills/pull/24)): `release.yml` publishes with `NPM_TOKEN` for the one-time bootstrap and through OIDC trusted publishing afterwards, ensures npm 11.5.1 or later, and rehearses the exact `npm publish` on `workflow_dispatch` with `--dry-run`. `CONTRIBUTING.md` documents both modes.
+
 ### Fixed
 
 - Two older errors in `references/cryptography.md`, found while checking #9: `hdk` 0.7 does have the decrypt functions (re-exported from `hdi`), and validation must not decrypt rather than cannot.
@@ -35,10 +35,10 @@ The second 1.0 candidate, built from what the first one met in the field. Every 
 - The Kangaroo versioning tables: pre-releases share a data folder within one `major.minor.patch-<id>`, and from 1.0 a minor bump keeps the folder too.
 - `client.md` and `frameworks/svelte.md` compared `signal.type` against `"App"`, so every signal was dropped; the enum value is `"app"`, now `SignalType.App`.
 - `docs/roadmap.md` no longer says 1.0.0 shipped on 2026-08-17, and its v2 lists Flowsta and mobile builds.
-
 - **Five source audits of the whole skill, 137 rows corrected** (Kangaroo 21, HDK API 18, host and tooling 31, chain, membranes and workflows 30, client and scaffolding 37), each against the 0.7.1 crate sources, kangaroo-electron `main-0.7`, hc-scaffold `v0.700.1` or the `@holochain/client` 0.21.1 typings. Among them: 0.6-era `Action::Update` / `Action::Create` matches now match `ActionData`, `Path::ensure` is on `TypedPath`, conductor config uses the externally tagged `report:` and `path:` manifests, about ten Sweettest calls and the `hc scaffold happ`, `hc s sandbox` and `hc sandbox call` commands are replaced by what 0.7.1 actually has.
 - **The Kangaroo pages re-derived from kangaroo-electron `main-0.7`**: configuration is `kangaroo.config.ts` (there is no `electron/config.ts`), the scripts are yarn, CI builds from the single `release` branch with signing switched on by `macOSCodeSigning` / `windowsEVCodeSigning` and their `APPLE_*` / `AZURE_*` secrets, Windows builds an NSIS installer, `hc web-app pack` makes the `.webhapp`, and auto-update only offers same-breaking-version releases behind a prompt.
 - **Every Rust example compiles.** All 134 blocks outside the example hApp were compiled against Holochain 0.7.1 (zome-side for wasm32, host-side against `test_utils`, wind-tunnel against its `main`) and classified as compiling as-is, compiling with stated context, or not meant to compile. 24 that should have compiled did not, and are fixed.
+
 ### Validation
 
 - `scripts/validate-skill.sh` rejects the capability types 0.7.1 removed, and now checks exact `hdk`/`hdi` pins in the inline-table form too; both proven by seeding a defect and watching the gate fail.

@@ -154,7 +154,7 @@ directory.
 
 ```bash
 mkdir -p /tmp/t6a/.claude/skills && cd /tmp/t6a
-curl -fsSL https://github.com/Soushi888/holochain-agent-skills/releases/download/v1.0.0-rc.1/holochain-agent-skills.tar.gz | tar -xz -C .claude/skills
+curl -fsSL https://github.com/Soushi888/holochain-agent-skills/releases/download/v1.0.0-rc.2/holochain-agent-skills.tar.gz | tar -xz -C .claude/skills
 ```
 
 | # | Test | Pass condition |
