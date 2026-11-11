@@ -12,7 +12,7 @@ GitHub Copilot, Cursor, Gemini CLI and every other tool that adopted the format.
 
 ```bash
 mkdir -p .claude/skills && curl -fsSL \
-  https://github.com/Soushi888/holochain-agent-skills/releases/download/v1.0.0-rc.1/holochain-agent-skills.tar.gz \
+  https://github.com/Soushi888/holochain-agent-skills/releases/download/v1.0.0-rc.2/holochain-agent-skills.tar.gz \
   | tar -xz -C .claude/skills
 ```
 
@@ -32,7 +32,7 @@ anything about Holochain, or invoke it by name (`/holochain` in Claude Code).
 
 ```nix
 inputs.holochain-agent-skills = {
-  url = "github:Soushi888/holochain-agent-skills/v1.0.0-rc.1";
+  url = "github:Soushi888/holochain-agent-skills/v1.0.0-rc.2";
   flake = false;
 };
 # consume: "${inputs.holochain-agent-skills}/skills/holochain"
@@ -41,7 +41,7 @@ inputs.holochain-agent-skills = {
 or use the flake, which also hands you the devShell glue:
 
 ```nix
-inputs.holochain-agent-skills.url = "github:Soushi888/holochain-agent-skills/v1.0.0-rc.1";
+inputs.holochain-agent-skills.url = "github:Soushi888/holochain-agent-skills/v1.0.0-rc.2";
 
 # in your devShell:
 shellHook = ''
@@ -226,7 +226,7 @@ AGENTS.md                      Install instructions addressed to an agent
 
 ## Community
 
-Questions, ideas, and reports on how the skill behaved on your project go to [Discussions](https://github.com/Soushi888/holochain-agent-skills/discussions). While `v1.0.0-rc.1` is a candidate, a [field report](https://github.com/Soushi888/holochain-agent-skills/discussions/new?category=field-reports) is the most useful thing you can send. Issues are for defects you can point at a file.
+Questions, ideas, and reports on how the skill behaved on your project go to [Discussions](https://github.com/Soushi888/holochain-agent-skills/discussions). While `v1.0.0-rc.2` is a candidate, a [field report](https://github.com/Soushi888/holochain-agent-skills/discussions/new?category=field-reports) is the most useful thing you can send. Issues are for defects you can point at a file.
 
 ## Contributing
 

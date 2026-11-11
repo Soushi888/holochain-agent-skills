@@ -114,6 +114,6 @@ The "Skill version" dropdown in the Field Reports and Q&A forms is not part of t
 - `send_remote_signal` is fire-and-forget; `recv_remote_signal` requires an unrestricted cap grant in `init()`
 - Sweettest consistency: `await_consistency(cells)` waits 60s, `await_consistency_s(timeout, cells)` takes an explicit budget, `check_consistency(cells)` does not wait. There is no `await_consistency_60s`
 - Networking is Kitsune2 0.5 over iroh (0.5.2 resolves under holochain 0.7.1), unconditionally. tx5 and WebRTC are gone from `holochain_p2p 0.7`, `signal_url` became `relay_url`, and the `transport-iroh` cargo feature no longer exists on the `holochain` crate
-- `hc sandbox call` was removed in 0.7. Admin API calls moved to the `hc-client` binary (`hc-client call <subcommand> --port`), and its zome-call arguments are positional
+- `hc sandbox call` was removed in 0.7. Admin API calls moved to `hc client call <subcommand> --port` (holonix `main-0.7` builds only the `hc` binary, whose builtin `client` subcommand this is), and its zome-call arguments are positional
 - `genesis_self_check` is written under that name but exported as `genesis_self_check_2`; `GenesisSelfCheckData` aliases V2, which carries only `membrane_proof` and `agent_key`. Call `dna_info()` inside the callback for DNA properties
 - Membrane enforcement that binds is validation of `FlatOp::CreateRecord(OpRecord::AgentValidationPkg { .. })`. The self-check runs on the joiner's own machine and a modified conductor skips it
