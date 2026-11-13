@@ -215,8 +215,10 @@ A compiler error in the user's own logic is not a skill defect. Neither is a que
 
 ```bash
 gh api graphql -f query='{repository(owner:"Soushi888",name:"holochain-agent-skills"){id discussionCategories(first:20){nodes{id name}}}}'
-gh api graphql -f query='mutation($r:ID!,$c:ID!,$t:String!,$b:String!){createDiscussion(input:{repositoryId:$r,categoryId:$c,title:$t,body:$b}){discussion{url}}}' -f r=<repository id> -f c=<"Field Reports" id> -f t='[Field report]: <title>' -f b="<approved draft>"
+gh api graphql -f query='mutation($r:ID!,$c:ID!,$t:String!,$b:String!){createDiscussion(input:{repositoryId:$r,categoryId:$c,title:$t,body:$b}){discussion{url}}}' -f r=<repository id> -f c=<"Field Reports" id> -f t='[Field report]: <title>' -F b=@report.md
 ```
+
+Write the approved draft to a file (`report.md` here) and pass it with `-F b=@<file>`, never inside shell quotes: error text carries backticks and `$`, which a quoted argument would run.
 
 **Keep it about the skill.** The draft carries versions, the skill's words and the error, not the user's project: no source code beyond the minimal snippet that shows the defect, no paths, repository names, hostnames, keys or agent public keys, unless the user adds them.
 
