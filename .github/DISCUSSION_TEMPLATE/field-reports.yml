@@ -7,7 +7,7 @@ body:
 
         Good reports and bad reports are equally welcome. "It routed straight to the right page and the zome compiled first try" is evidence too.
 
-        It also takes a defect or a suggestion for the skill. The skill's Feedback Mode lets an agent that hit one draft this report for you to review and send.
+        It also takes a defect or a suggestion for the skill. The skill's Feedback Mode lets an agent that hit one draft this report for you to review and send. For a defect or a suggestion, the run fields (install method, what else was loaded, kind of work) are optional.
 
         If you already know the defect and the file it lives in, a [bug report issue](https://github.com/Soushi888/holochain-agent-skills/issues/new?template=bug_report.yml) is faster. A stale version pin has [its own form](https://github.com/Soushi888/holochain-agent-skills/issues/new?template=stale_version.yml).
 
@@ -70,7 +70,7 @@ body:
         - Manual copy or symlink of skills/holochain
         - Shipped inside another tool
     validations:
-      required: true
+      required: false
 
   - type: dropdown
     id: isolation
@@ -83,7 +83,7 @@ body:
         - Other skills, or a CLAUDE.md / AGENTS.md / rules file, were also loaded
         - Not sure
     validations:
-      required: true
+      required: false
 
   - type: input
     id: holochain-versions
@@ -102,7 +102,7 @@ body:
         - Debugging or reviewing existing code
         - Questions only, no code written
     validations:
-      required: true
+      required: false
 
   - type: textarea
     id: task
