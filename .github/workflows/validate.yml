@@ -64,6 +64,23 @@ jobs:
           test -f /tmp/smoke/.claude/skills/holochain/SKILL.md
           test ! -e /tmp/smoke/.claude/skills/holochain/book.toml
 
+      # The README's main install runs scripts/install.ts from a clone, under Node's own type
+      # stripping. Non-erasable TypeScript (an enum, a namespace) would break it while every
+      # step above stays green, so the source runs here too, then install.sh end to end.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Installer runs from source, and install.sh installs
+        run: |
+          mkdir -p /tmp/src-smoke/.cursor && cd /tmp/src-smoke
+          node "$GITHUB_WORKSPACE/scripts/install.ts" install --link --yes
+          test -f /tmp/src-smoke/.cursor/skills/holochain/SKILL.md
+          mkdir -p /tmp/sh-smoke/.claude && cd /tmp/sh-smoke
+          HOLOCHAIN_SKILLS_HOME=/tmp/sh-home sh "$GITHUB_WORKSPACE/install.sh"
+          test -f /tmp/sh-smoke/.claude/skills/holochain/SKILL.md
+          HOLOCHAIN_SKILLS_HOME=/tmp/sh-home sh "$GITHUB_WORKSPACE/install.sh" --dry-run
+
       - name: Release archives build and extract to the documented shape
         run: |
           sh scripts/build-release-assets.sh
