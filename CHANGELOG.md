@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [1.0.0-rc.2] - 2026-11-11
+## [1.0.0-rc.2] - 2026-11-13
 
 The second 1.0 candidate, built from what the first one met in the field. Most changes below trace to a report: an issue, a post on X, or a release upstream that broke the candidate on a fresh project.
 
@@ -14,6 +14,7 @@ The second 1.0 candidate, built from what the first one met in the field. Most c
 
 ### Added
 
+- **Feedback Mode** in `SKILL.md`: when the skill itself was wrong, stale or missing something on a real project (not the user's code), the agent finishes the task, then offers once to draft a report for the user to review. The draft follows the Field reports form, leaves the project's code and paths out, and is sent only by the user, or posted by the agent as a discussion after the user approves the text. One line in the project's agent instructions turns it off. The [Field reports form](https://github.com/Soushi888/holochain-agent-skills/discussions/new?category=field-reports) now asks the kind of report (run report, defect or suggestion), the skill file involved and a suggested fix.
 - **Version Check First** in `SKILL.md`: before writing code, read the project's lockfile and holonix ref, stop on anything that is not 0.7, and route a 0.6 project to the `UpgradeHolochain07` workflow. The 0.7.0 / 0.7.1 split keys on `holochain_integrity_types`, which carries the grant types: an exact 0.7.0 pin on `hdk` with a fresh lockfile already resolves it at 0.7.1. Prompted by Paul d'Aoust ([@helioscomm](https://x.com/helioscomm/status/2110052187086917850)), whose agent invented removed APIs because the 0.6 skill was installed on a 0.7 project, and by Evgeny Shevtsov ([@eVshevtsoV](https://x.com/eVshevtsoV/status/2110064372647121318)), who asked for exactly that step.
 - **A rejection test in the example hApp.** `validate_create_post` now refuses an empty title, and `create_post_with_empty_title_is_rejected` and `update_post_with_empty_title_is_rejected` assert the commit fails as `SourceChainError::InvalidCommit` carrying that validation message, not merely with an error; `references/testing.md` shows the assertion. Asked for by [@mktpavlenko](https://x.com/mktpavlenko) on 2026-09-10: a skill that teaches validation should prove a rejection.
 - **The keystore's 8 KiB frame limit**, the envelope pattern that works around it, **Kangaroo patch and minor releases that never install the new hApp** (with the `UpdateCoordinators` workaround), and **remote refusals that arrive as `NetworkError`**, from Ceri John's report ([@topeuph-ai](https://github.com/topeuph-ai), [#9](https://github.com/Soushi888/holochain-agent-skills/issues/9)), each re-checked against the 0.7 sources.

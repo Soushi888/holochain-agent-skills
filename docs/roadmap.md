@@ -1,6 +1,6 @@
 # Roadmap
 
-## v1 - Core Spiral (RELEASE CANDIDATE, `v1.0.0-rc.2` since 2026-11-11; `v1.0.0` not yet tagged)
+## v1 - Core Spiral (RELEASE CANDIDATE, `v1.0.0-rc.2` since 2026-11-13; `v1.0.0` not yet tagged)
 
 **Theme:** Everything needed to build, test, and deploy a Holochain hApp from scratch.
 
@@ -79,4 +79,4 @@ Once both the PAI version and vanilla version are field-tested:
 | 0.1.2 | 2026-05-15 | Version bump to Holochain 0.6.1 (hdk=0.6.1, hdi=0.7.1); references/wind-tunnel.md shipped ahead of schedule | <!-- legacy-ok: a release history row, not a pin -->
 | 0.2.0 | 2026-05-15 | Expanded progenitor pattern: full DnaProperties setup, bootstrap mode (`Option<AgentPubKey>`), integrity validation enforcement, is_progenitor hdk_extern, init() bootstrap, deploy-time injection via Kangaroo roles_settings; based on Requests & Offers implementation |
 | 1.0.0-rc.1 | 2026-09-04 | First 1.0 release candidate (prerelease). Holochain 0.7 only (hdk=0.7.0, hdi=0.8.0, holonix main-0.7). Repository restructured to references/ + assets/ + scripts/. Example hApp compiles and its Sweettest suite passes. Countersigning, scheduling, cryptography and warrants documented. Validator, version bumper and routing eval in CI. Community files added. Verified end to end by a second model producing code that compiled on first try |
-| 1.0.0-rc.2 | 2026-11-11 | Second candidate, built from the rc.1 field reviews. See `CHANGELOG.md` |
+| 1.0.0-rc.2 | 2026-11-13 | Second candidate, built from the rc.1 field reviews. See `CHANGELOG.md` |

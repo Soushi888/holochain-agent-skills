@@ -7,7 +7,20 @@ body:
 
         Good reports and bad reports are equally welcome. "It routed straight to the right page and the zome compiled first try" is evidence too.
 
+        It also takes a defect or a suggestion for the skill. The skill's Feedback Mode lets an agent that hit one draft this report for you to review and send.
+
         If you already know the defect and the file it lives in, a [bug report issue](https://github.com/Soushi888/holochain-agent-skills/issues/new?template=bug_report.yml) is faster. A stale version pin has [its own form](https://github.com/Soushi888/holochain-agent-skills/issues/new?template=stale_version.yml).
+
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Kind of report
+      options:
+        - Run report (how the skill did on real work)
+        - Defect (the skill was wrong, stale or missing something)
+        - Suggestion (an improvement to the skill)
+    validations:
+      required: true
 
   - type: dropdown
     id: skill-version
@@ -122,11 +135,24 @@ body:
         Loaded: SKILL.md, references/patterns.md
         Should have loaded: references/membranes.md
 
+  - type: input
+    id: skill-file
+    attributes:
+      label: Skill file involved
+      description: For a defect or a suggestion, the file it concerns, if you know it.
+      placeholder: references/access-control.md
+
   - type: textarea
     id: went-wrong
     attributes:
       label: What went wrong
       description: Stale or invented APIs, a workflow that sent the agent sideways, a missing pattern. Paste compiler or conductor errors literally, in a fenced code block, not paraphrased.
+
+  - type: textarea
+    id: suggested-fix
+    attributes:
+      label: Suggested fix or improvement
+      description: What the skill should say or do instead, if you know.
 
   - type: textarea
     id: went-right

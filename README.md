@@ -226,7 +226,7 @@ AGENTS.md                      Install instructions addressed to an agent
 
 ## Community
 
-Questions, ideas, and reports on how the skill behaved on your project go to [Discussions](https://github.com/Soushi888/holochain-agent-skills/discussions). While `v1.0.0-rc.2` is a candidate, a [field report](https://github.com/Soushi888/holochain-agent-skills/discussions/new?category=field-reports) is the most useful thing you can send. Issues are for defects you can point at a file.
+Questions, ideas, and reports on how the skill behaved on your project go to [Discussions](https://github.com/Soushi888/holochain-agent-skills/discussions). While `v1.0.0-rc.2` is a candidate, a [field report](https://github.com/Soushi888/holochain-agent-skills/discussions/new?category=field-reports) is the most useful thing you can send, and the skill's Feedback Mode lets your agent draft one when it catches the skill being wrong. Issues are for defects you can point at a file.
 
 ## Contributing
 
