@@ -196,6 +196,34 @@ Run this against any zome code being written or reviewed. Each item is a class o
 - [ ] **`agent_pub_key` and `created_at` are NOT entry fields** — They live in the action header. Remove them from entry structs.
 - [ ] **If using a shared utility crate** — verify intra-DNA and cross-DNA call helpers are used consistently rather than raw `call()` inline.
 
+## Feedback Mode
+
+This skill is a release candidate, and what an agent meets on a project its maintainers have never seen is the one thing its CI cannot measure. So when the skill itself lets you down, offer to report it to the maintainers, with your user's approval.
+
+**What counts.** The skill was wrong, not the user's code:
+- an API, pin or command it gave does not compile or run against the versions the project resolves;
+- a topic the skill covers (its routing table and context files say which) left out a step or pattern you needed, and you worked it out from crate sources, docs or trial and error;
+- a workflow or a page sent you the wrong way, or the routing table pointed at the wrong page;
+- a version, a pin or a tool it names is stale;
+- an improvement the user suggests for the skill.
+
+A compiler error in the user's own logic is not a skill defect. Neither is a question the skill never claimed to answer.
+
+**When and how.** First check the project's agent instructions file (AGENTS.md or CLAUDE.md): if it carries the line `holochain-skill-feedback: off`, say nothing. Otherwise finish the user's task first, then make one offer per session, never mid-task, bundling every finding: one sentence on what the skill got wrong or lacked, and how to silence these offers (add `holochain-skill-feedback: off` to AGENTS.md or CLAUDE.md). If the user agrees, draft the report in the shape of the [Field reports form](https://github.com/Soushi888/holochain-agent-skills/discussions/new?category=field-reports): kind of report (defect, suggestion or run report), skill version (`metadata.version` above), harness and model, the Holochain, `hdk` and `hdi` versions the project resolves, the skill file involved, what the skill said, what actually happened, and the fix if you know it. Paste errors literally, but replace absolute paths, user names, project and crate names with placeholders such as `<project>`. Show the draft and let the user edit it.
+
+**Sending it is the user's act.** Give the user the form link with the draft to paste. Where `gh` is authenticated, you may offer to post it as a discussion instead, but only after the user has approved the final text, and never without that approval. Look up the ids first, then create it:
+
+```bash
+gh api graphql -f query='{repository(owner:"Soushi888",name:"holochain-agent-skills"){id discussionCategories(first:20){nodes{id name}}}}'
+gh api graphql -f query='mutation($r:ID!,$c:ID!,$t:String!,$b:String!){createDiscussion(input:{repositoryId:$r,categoryId:$c,title:$t,body:$b}){discussion{url}}}' -f r=<repository id> -f c=<"Field Reports" id> -f t='[Field report]: <title>' -F b=@field-report.txt
+```
+
+Write the approved draft to a file (`field-report.txt` here, outside the project) and pass it with `-F b=@<file>`, never inside shell quotes: error text carries backticks and `$`, which a quoted argument would run.
+
+**Keep it about the skill.** The draft carries versions, the skill's words and the error, not the user's project: no source code beyond the minimal snippet that shows the defect, no paths, repository names, hostnames, keys or agent public keys, unless the user adds them.
+
+**Off switch.** If the user says no, or asks for no feedback prompts, stop offering for the rest of the session. The line `holochain-skill-feedback: off` in AGENTS.md or CLAUDE.md turns it off for good.
+
 ## Examples
 
 **Example 1: Design a new entry type for a marketplace listing**
