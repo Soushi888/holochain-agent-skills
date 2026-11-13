@@ -30,6 +30,11 @@ permissions:
   contents: write
   id-token: write
 
+# One run per tag at a time: a re-dispatch waits for the run already on that tag.
+concurrency:
+  group: release-${{ github.event.inputs.tag || github.ref_name }}
+  cancel-in-progress: false
+
 jobs:
   release:
     name: Validate, build assets, publish
@@ -43,8 +48,14 @@ jobs:
 
       - name: Resolve tag
         id: tag
+        # Every expression reaches the shell through env, never spliced into
+        # the script, so a dispatch input cannot inject shell.
+        env:
+          TAG: ${{ github.event.inputs.tag || github.ref_name }}
+          EVENT: ${{ github.event_name }}
+          PUBLISH: ${{ inputs.publish }}
+          REF: ${{ github.ref }}
         run: |
-          TAG="${{ github.event.inputs.tag || github.ref_name }}"
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
           echo "version=${TAG#v}" >> "$GITHUB_OUTPUT"
           # A hyphen in the version is the semver prerelease marker, so
@@ -63,12 +74,12 @@ jobs:
           # release-please.yml sends with publish=true. A live dispatch must
           # run on the tag itself, or the gates below would check one tree
           # and the release would ship another.
-          case "${{ github.event_name }}:${{ inputs.publish }}" in
+          case "$EVENT:$PUBLISH" in
             push:*|workflow_dispatch:true) LIVE=true ;;
             *)                             LIVE=false ;;
           esac
-          if [ "$LIVE" = true ] && [ "${{ github.ref }}" != "refs/tags/$TAG" ]; then
-            echo "a publishing run must be dispatched on refs/tags/$TAG, got ${{ github.ref }}"
+          if [ "$LIVE" = true ] && [ "$REF" != "refs/tags/$TAG" ]; then
+            echo "a publishing run must be dispatched on refs/tags/$TAG, got $REF"
             exit 1
           fi
           echo "live=$LIVE" >> "$GITHUB_OUTPUT"
@@ -91,7 +102,9 @@ jobs:
         run: sh scripts/eval/run-eval.sh
 
       - name: Version declarations agree with the tag
-        run: sh scripts/check-versions.sh "${{ steps.tag.outputs.tag }}"
+        env:
+          TAG: ${{ steps.tag.outputs.tag }}
+        run: sh scripts/check-versions.sh "$TAG"
 
       - uses: oven-sh/setup-bun@v2
         with:
@@ -146,7 +159,9 @@ jobs:
           grep -q '^skills/holochain/SKILL.md$' /tmp/files.txt
 
       - name: Build release archives
-        run: sh scripts/build-release-assets.sh "${{ steps.tag.outputs.version }}"
+        env:
+          VERSION: ${{ steps.tag.outputs.version }}
+        run: sh scripts/build-release-assets.sh "$VERSION"
 
       - name: Verify archives extract to the documented shape
         # The README tells people to run exactly this. If the archive root is
@@ -161,8 +176,9 @@ jobs:
 
       - name: Extract the changelog section for this version
         id: notes
+        env:
+          VERSION: ${{ steps.tag.outputs.version }}
         run: |
-          VERSION="${{ steps.tag.outputs.version }}"
           awk -v v="$VERSION" '
             $0 ~ "^## \\[" v "\\]" { capture = 1; next }
             capture && /^## \[/     { exit }
@@ -223,16 +239,21 @@ jobs:
             "dist/holochain-agent-skills-$VERSION.zip" \
             dist/holochain-agent-skills.tar.gz \
             dist/SHA256SUMS
-          if gh release view "$TAG" > /dev/null 2>&1; then
+          # Create only when gh says the release is not there; any other
+          # error (auth, network, rate limit) stops the step instead.
+          if err=$(gh release view "$TAG" 2>&1 > /dev/null); then
             echo "release $TAG exists (release-please draft): uploading, then publishing"
             gh release upload "$TAG" "$@" --clobber
             gh release edit "$TAG" --title "$TAG" --notes-file /tmp/release-notes.md \
               --prerelease="$PRERELEASE" --draft=false
-          else
+          elif printf '%s\n' "$err" | grep -qi 'release not found'; then
             echo "no release for $TAG yet (tag pushed by hand): creating it"
             if [ "$PRERELEASE" = true ]; then PRE=--prerelease; else PRE=; fi
             gh release create "$TAG" "$@" --verify-tag --title "$TAG" \
               --notes-file /tmp/release-notes.md $PRE
+          else
+            printf '%s\n' "$err" >&2
+            exit 1
           fi
 
   sync-discussion-forms:

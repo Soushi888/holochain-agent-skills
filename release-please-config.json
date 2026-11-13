@@ -25,10 +25,10 @@
   },
   "changelog-sections": [
     { "type": "feat", "section": "Added" },
-    { "type": "fix", "section": "Fixed" },
     { "type": "docs", "section": "Changed" },
     { "type": "perf", "section": "Changed" },
     { "type": "revert", "section": "Changed" },
+    { "type": "fix", "section": "Fixed" },
     { "type": "ci", "section": "Validation" },
     { "type": "test", "section": "Validation" },
     { "type": "refactor", "section": "Changed", "hidden": true },
