@@ -1,0 +1,61 @@
+name: Release Please
+
+# Keeps one release PR open against main, built from the conventional commits
+# merged since the last release: the version in package.json, SKILL.md and the
+# install lines, plus the new CHANGELOG.md section. Merging that PR is the only
+# human step of a release.
+#
+# On the merge, release-please tags the merge commit and leaves a DRAFT
+# release on the tag (release-please-config.json: draft, force-tag-creation).
+# It does that with GITHUB_TOKEN, and an event raised by GITHUB_TOKEN starts no
+# workflow run, so the tag alone would never start release.yml. The second job
+# below dispatches release.yml on the tag instead: workflow_dispatch is the
+# documented exception that always starts a run. release.yml then runs every
+# gate, builds the archives, publishes to npm, uploads the archives to the
+# draft and publishes it. Dispatching, rather than calling release.yml as a
+# reusable workflow, keeps release.yml the top-level workflow of the publishing
+# run, which is what npm trusted publishing is configured against.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+  actions: write
+
+concurrency:
+  group: release-please
+  cancel-in-progress: false
+
+jobs:
+  release-please:
+    name: Release PR and tag
+    runs-on: ubuntu-latest
+    outputs:
+      release_created: ${{ steps.rp.outputs.release_created }}
+      tag_name: ${{ steps.rp.outputs.tag_name }}
+    steps:
+      - id: rp
+        uses: googleapis/release-please-action@v4
+        with:
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+
+  release:
+    name: Start release.yml on the new tag
+    needs: release-please
+    if: needs.release-please.outputs.release_created == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Dispatch release.yml with publish=true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ needs.release-please.outputs.tag_name }}
+        run: |
+          echo "+ gh workflow run release.yml --ref $TAG -f tag=$TAG -f publish=true"
+          gh workflow run release.yml --ref "$TAG" -f tag="$TAG" -f publish=true

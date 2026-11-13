@@ -1,5 +1,18 @@
 name: Release
 
+# Three ways in:
+# - release-please.yml dispatches this run after the release PR is merged. It
+#   created the tag and a draft release with GITHUB_TOKEN, and an event raised
+#   by that token starts no workflow run, so `push: tags` below never sees a
+#   release-please tag. workflow_dispatch is the documented exception that
+#   always starts a run, and it keeps this file the top-level workflow, which
+#   is the one npm trusted publishing checks (a workflow_call from
+#   release-please.yml would present release-please.yml to npm instead).
+#   That dispatch passes publish=true and runs on the tag's own ref.
+# - A tag pushed by hand still releases, as before.
+# - workflow_dispatch from the Actions tab without publish is the rehearsal:
+#   every gate and build step, npm with --dry-run, no GitHub release.
+
 on:
   push:
     tags: ["v*"]
@@ -8,6 +21,10 @@ on:
       tag:
         description: "Tag to release (for a dry run without publishing)"
         required: true
+      publish:
+        description: "Publish for real. Set by release-please.yml; leave off for a rehearsal."
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -17,6 +34,8 @@ jobs:
   release:
     name: Validate, build assets, publish
     runs-on: ubuntu-latest
+    outputs:
+      live: ${{ steps.tag.outputs.live }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -40,12 +59,25 @@ jobs:
           esac
           echo "prerelease=$PRERELEASE" >> "$GITHUB_OUTPUT"
           echo "npm_tag=$NPM_TAG" >> "$GITHUB_OUTPUT"
+          # live means this run publishes: a tag push, or the dispatch
+          # release-please.yml sends with publish=true. A live dispatch must
+          # run on the tag itself, or the gates below would check one tree
+          # and the release would ship another.
+          case "${{ github.event_name }}:${{ inputs.publish }}" in
+            push:*|workflow_dispatch:true) LIVE=true ;;
+            *)                             LIVE=false ;;
+          esac
+          if [ "$LIVE" = true ] && [ "${{ github.ref }}" != "refs/tags/$TAG" ]; then
+            echo "a publishing run must be dispatched on refs/tags/$TAG, got ${{ github.ref }}"
+            exit 1
+          fi
+          echo "live=$LIVE" >> "$GITHUB_OUTPUT"
           # Echoed to stdout as well as to GITHUB_OUTPUT, because the outputs
           # are consumed only by the two publishing steps, and those are the
           # steps a workflow_dispatch rehearsal skips. Without this line a dry
           # run proves the branch executes and proves nothing about what it
           # produced, which is the one thing worth rehearsing.
-          echo "Resolved: tag=$TAG version=${TAG#v} prerelease=$PRERELEASE npm_tag=$NPM_TAG"
+          echo "Resolved: tag=$TAG version=${TAG#v} prerelease=$PRERELEASE npm_tag=$NPM_TAG live=$LIVE"
 
       # Everything below publishes something irreversible, so both gates run
       # first. The version check is the one that matters here: a package whose
@@ -139,10 +171,10 @@ jobs:
           test -s /tmp/release-notes.md
 
       - name: Publish to npm
-        # Off by default on a tag push: it runs only when the repository
-        # variable NPM_PUBLISH is true. On workflow_dispatch it always runs,
-        # with --dry-run, so the rehearsal shows the exact command a tag would
-        # run without publishing anything.
+        # Off by default on a live run (a tag push, or release-please's
+        # dispatch): it runs only when the repository variable NPM_PUBLISH is
+        # true. On a rehearsal it always runs, with --dry-run, so the rehearsal
+        # shows the exact command a live run would use without publishing.
         #
         # Two authentication modes, chosen by whether NPM_TOKEN is set:
         # - token: the one-time bootstrap. Trusted publishing can only be
@@ -154,42 +186,63 @@ jobs:
         #   provenance is generated without a flag.
         # The npm CLI tries OIDC first and falls back to a token, so "mode"
         # below is what the job was given, printed for the record.
-        if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && vars.NPM_PUBLISH == 'true')
+        if: steps.tag.outputs.live != 'true' || vars.NPM_PUBLISH == 'true'
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           NPM_TAG: ${{ steps.tag.outputs.npm_tag }}
-          DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && '--dry-run' || '' }}
+          DRY_RUN: ${{ steps.tag.outputs.live != 'true' && '--dry-run' || '' }}
         run: |
           if [ -n "$NODE_AUTH_TOKEN" ]; then MODE=token; else MODE=oidc; fi
           echo "npm publish mode=$MODE tag=$NPM_TAG ${DRY_RUN:-(live)}"
           echo "+ npm publish --access public --tag $NPM_TAG --provenance $DRY_RUN"
           npm publish --access public --tag "$NPM_TAG" --provenance $DRY_RUN
 
-      - name: Create the GitHub release
+      - name: Publish the GitHub release
         # npm and GitHub are independent distribution channels, so a registry
         # refusal must not withhold the archives. Every gate above still
-        # guards this step; only the publish result is excluded, and the job
-        # still reports failure when the publish fails, so a divergence is
-        # visible rather than silent.
-        if: github.event_name == 'push' && !cancelled()
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ steps.tag.outputs.tag }}
-          prerelease: ${{ steps.tag.outputs.prerelease == 'true' }}
-          body_path: /tmp/release-notes.md
-          files: |
-            dist/holochain-agent-skills-${{ steps.tag.outputs.version }}.tar.gz
-            dist/holochain-agent-skills-${{ steps.tag.outputs.version }}.zip
-            dist/holochain-agent-skills.tar.gz
+        # guards this step: the notes step is the last one before npm, so its
+        # success means every gate and build passed. Only the npm result is
+        # excluded, and the job still reports failure when the publish fails,
+        # so a divergence is visible rather than silent.
+        #
+        # release-please leaves a draft release on the tag (draft: true in
+        # release-please-config.json), so nothing is public until the gates
+        # pass: this step uploads the archives to it, then publishes it. A
+        # tag pushed by hand has no release yet, and gets one created here.
+        # `gh release view` finds a draft by its tag name.
+        if: steps.tag.outputs.live == 'true' && !cancelled() && steps.notes.outcome == 'success'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ steps.tag.outputs.tag }}
+          VERSION: ${{ steps.tag.outputs.version }}
+          PRERELEASE: ${{ steps.tag.outputs.prerelease }}
+        run: |
+          set -- \
+            "dist/holochain-agent-skills-$VERSION.tar.gz" \
+            "dist/holochain-agent-skills-$VERSION.zip" \
+            dist/holochain-agent-skills.tar.gz \
             dist/SHA256SUMS
+          if gh release view "$TAG" > /dev/null 2>&1; then
+            echo "release $TAG exists (release-please draft): uploading, then publishing"
+            gh release upload "$TAG" "$@" --clobber
+            gh release edit "$TAG" --title "$TAG" --notes-file /tmp/release-notes.md \
+              --prerelease="$PRERELEASE" --draft=false
+          else
+            echo "no release for $TAG yet (tag pushed by hand): creating it"
+            if [ "$PRERELEASE" = true ]; then PRE=--prerelease; else PRE=; fi
+            gh release create "$TAG" "$@" --verify-tag --title "$TAG" \
+              --notes-file /tmp/release-notes.md $PRE
+          fi
 
   sync-discussion-forms:
     # The release above is created with GITHUB_TOKEN, and an event raised by
     # that token starts no workflow run, so the sync workflow's own
     # `on: release` never sees a tagged release. Calling it here is the path.
     # It reads the release list as it is, so it runs even when the release job
-    # failed: with no new release it finds nothing to change.
+    # failed: with no new release it finds nothing to change. It runs on every
+    # live run, release-please's dispatch included, and never on a rehearsal.
     name: Sync the discussion forms
     needs: release
-    if: github.event_name == 'push' && !cancelled()
+    if: ${{ !cancelled() && needs.release.outputs.live == 'true' }}
     uses: ./.github/workflows/sync-discussion-forms.yml
