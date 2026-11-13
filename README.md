@@ -36,16 +36,19 @@ On Windows, run it from Git Bash or WSL with `--copy` (a link needs Developer Mo
 
 **The release archive, without git.** Every release publishes the skill as an archive, with `SHA256SUMS` to verify it:
 
+<!-- x-release-please-start-version -->
 ```bash
 mkdir -p .claude/skills && curl -fsSL \
   https://github.com/Soushi888/holochain-agent-skills/releases/download/v1.0.0-rc.2/holochain-agent-skills.tar.gz \
   | tar -xz -C .claude/skills
 ```
+<!-- x-release-please-end -->
 
 Replace `.claude/skills` with your harness's path if it differs (the table below lists them all). The archive's root is one directory per skill, so the extraction lands `skills/holochain/SKILL.md` with no rename step.
 
 **Nix.** Either take the source tree and point at the subdirectory:
 
+<!-- x-release-please-start-version -->
 ```nix
 inputs.holochain-agent-skills = {
   url = "github:Soushi888/holochain-agent-skills/v1.0.0-rc.2";
@@ -53,9 +56,11 @@ inputs.holochain-agent-skills = {
 };
 # consume: "${inputs.holochain-agent-skills}/skills/holochain"
 ```
+<!-- x-release-please-end -->
 
 or use the flake, which also hands you the devShell glue:
 
+<!-- x-release-please-start-version -->
 ```nix
 inputs.holochain-agent-skills.url = "github:Soushi888/holochain-agent-skills/v1.0.0-rc.2";
 
@@ -70,6 +75,7 @@ shellHook = ''
   }}
 '';
 ```
+<!-- x-release-please-end -->
 
 `packages.<system>.holochain` is rooted at the skill itself, so `${it}/SKILL.md` exists.
 `packages.<system>.default` is the bundle, one directory per skill, matching the release
@@ -81,14 +87,17 @@ that mode, so the *second* `nix develop` fails with a permission error. The hook
 
 **The same thing by hand.** Without the script, clone the release once and run the installer from it:
 
+<!-- x-release-please-start-version -->
 ```bash
 git -c advice.detachedHead=false clone --depth 1 --branch v1.0.0-rc.2 https://github.com/Soushi888/holochain-agent-skills.git ~/.holochain-agent-skills
 node ~/.holochain-agent-skills/scripts/install.ts install --link
 ```
+<!-- x-release-please-end -->
 
 `node ~/.holochain-agent-skills/scripts/install.ts list` prints every skill and every harness path it knows.
 
-**Pin a version.** `| HOLOCHAIN_SKILLS_VERSION=v1.0.0-rc.2 sh` pins the script to a tag (any tag from `v1.0.0-rc.1` on), and the archive URL names its tag, so pinning is just choosing the tag.
+**Pin a version.** `| HOLOCHAIN_SKILLS_VERSION=v1.0.0-rc.2 sh` pins the script to a tag, and the archive URL names its tag, so pinning is just choosing the tag. <!-- x-release-please-version -->
+The script works with any tag from the first 1.0 candidate on.
 Release candidates are marked as prereleases, which means `releases/latest/download` skips
 them: it keeps pointing at the last stable release until 1.0.0 ships.
 
@@ -233,7 +242,7 @@ AGENTS.md                      Install instructions addressed to an agent
 
 ## Community
 
-Questions, ideas, and reports on how the skill behaved on your project go to [Discussions](https://github.com/Soushi888/holochain-agent-skills/discussions). While `v1.0.0-rc.2` is a candidate, a [field report](https://github.com/Soushi888/holochain-agent-skills/discussions/new?category=field-reports) is the most useful thing you can send, and the skill's Feedback Mode lets your agent draft one when it catches the skill being wrong. Issues are for defects you can point at a file.
+Questions, ideas, and reports on how the skill behaved on your project go to [Discussions](https://github.com/Soushi888/holochain-agent-skills/discussions). While `v1.0.0-rc.2` is a candidate, a [field report](https://github.com/Soushi888/holochain-agent-skills/discussions/new?category=field-reports) is the most useful thing you can send, and the skill's Feedback Mode lets your agent draft one when it catches the skill being wrong. Issues are for defects you can point at a file. <!-- x-release-please-version -->
 
 ## Contributing
 
