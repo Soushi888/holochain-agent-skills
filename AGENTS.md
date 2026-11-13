@@ -11,6 +11,13 @@ here, read the second.
 Run this from the root of the project that should get the skill:
 
 ```bash
+git -c advice.detachedHead=false clone --depth 1 --branch v1.0.0-rc.2 https://github.com/Soushi888/holochain-agent-skills.git ~/.holochain-agent-skills
+node ~/.holochain-agent-skills/scripts/install.ts install --link
+```
+
+The installer needs Node 22.18 or later (or Bun, with `bun` in place of `node`). It never prompts without a terminal, detects every harness directory the project has and links the skill into each. Without git or Node, use the release archive:
+
+```bash
 mkdir -p .claude/skills && curl -fsSL \
   https://github.com/Soushi888/holochain-agent-skills/releases/download/v1.0.0-rc.2/holochain-agent-skills.tar.gz \
   | tar -xz -C .claude/skills
