@@ -27,7 +27,8 @@ body:
     attributes:
       label: Skill version
       options:
-        - v1.0.0-rc.1 (pre-release, Holochain 0.7)
+        - v1.0.0-rc.2 (pre-release, Holochain 0.7)
+        - v1.0.0-rc.1 (Holochain 0.7)
         - main (unreleased)
         - v0.2.0 (Holochain 0.6)
         - Other (say which below)
