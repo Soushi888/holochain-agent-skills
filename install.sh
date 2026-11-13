@@ -34,14 +34,13 @@ else
   git -c advice.detachedHead=false clone --quiet --depth 1 --branch "$VERSION" "$REPO" "$DEST"
 fi
 
-# --copy is this script's word for the installer's default; everything else passes through.
+# --copy is this script's word for the installer's default; everything else passes through,
+# rebuilt as positional parameters so an argument holding a space stays one argument.
 LINK="--link"
-ARGS=""
-for a in "$@"; do
-  case "$a" in
-    --copy) LINK="" ;;
-    *) ARGS="$ARGS $a" ;;
-  esac
+n=$#
+while [ "$n" -gt 0 ]; do
+  a=$1; shift; n=$((n - 1))
+  if [ "$a" = "--copy" ]; then LINK=""; else set -- "$@" "$a"; fi
 done
 
 node_ok() {
@@ -59,5 +58,5 @@ else
   die "the installer needs Node 22.18 or later, or Bun. The skill is cloned in $DEST; copy $DEST/skills/holochain into your agent's skills folder by hand, or install Node and run this again."
 fi
 
-# shellcheck disable=SC2086 # ARGS is a list of words on purpose
-exec "$RUN" "$DEST/scripts/install.ts" install $LINK $ARGS
+# shellcheck disable=SC2086 # LINK is empty or one word, on purpose
+exec "$RUN" "$DEST/scripts/install.ts" install $LINK "$@"
