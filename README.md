@@ -21,7 +21,7 @@ The installer finds the agent harnesses the project uses (`.claude`, `.cursor`, 
 Every project links to the one clone, so running the same line again after a new release updates them all.
 
 It needs git, and Node 22.18 or later (which runs the TypeScript installer directly) or Bun; the script checks for both and says what is missing.
-Options go after `sh -s --`: `--global` installs into your home directory instead of the project, `--dry-run` shows what it would do, `--target claude,cursor` picks harnesses, and `--copy` copies instead of linking.
+Options go after `sh -s --`: `--global` installs into your home directory instead of the project, `--dry-run` shows what it would do to the project (it still fetches the skill into `~/.holochain-agent-skills`), `--target claude,cursor` picks harnesses, and `--copy` copies instead of linking.
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/Soushi888/holochain-agent-skills/main/install.sh | sh -s -- --global
@@ -88,7 +88,7 @@ node ~/.holochain-agent-skills/scripts/install.ts install --link
 
 `node ~/.holochain-agent-skills/scripts/install.ts list` prints every skill and every harness path it knows.
 
-**Pin a version.** `| HOLOCHAIN_SKILLS_VERSION=v1.0.0-rc.2 sh` pins the script to a tag, and the archive URL names its tag, so pinning is just choosing the tag.
+**Pin a version.** `| HOLOCHAIN_SKILLS_VERSION=v1.0.0-rc.2 sh` pins the script to a tag (any tag from `v1.0.0-rc.1` on), and the archive URL names its tag, so pinning is just choosing the tag.
 Release candidates are marked as prereleases, which means `releases/latest/download` skips
 them: it keeps pointing at the last stable release until 1.0.0 ships.
 

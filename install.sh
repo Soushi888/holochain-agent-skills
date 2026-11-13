@@ -23,16 +23,25 @@ die() { printf '%s\n' "holochain-skills: $*" >&2; exit 1; }
 
 command -v git >/dev/null 2>&1 || die "git is required."
 
+# The clone is managed by this script: a rerun moves it to the pinned tag, so local edits
+# in it are not supported. --dry-run still clones or updates it; only the project is left alone.
 if [ -d "$DEST/.git" ]; then
+  origin=$(git -C "$DEST" remote get-url origin 2>/dev/null || true)
+  case "$origin" in
+    "$REPO" | "${REPO%.git}") ;;
+    *) die "$DEST is a git repository but not a clone of $REPO; move it or set HOLOCHAIN_SKILLS_HOME." ;;
+  esac
   say "updating $DEST to $VERSION"
-  git -C "$DEST" fetch --quiet --depth 1 origin tag "$VERSION"
-  git -C "$DEST" -c advice.detachedHead=false checkout --quiet "$VERSION"
+  git -C "$DEST" fetch --quiet --depth 1 origin tag "$VERSION" || die "could not fetch tag $VERSION from $REPO."
+  git -C "$DEST" -c advice.detachedHead=false checkout --quiet "$VERSION" || die "could not check out $VERSION in $DEST; a local edit there may be in the way."
 elif [ -e "$DEST" ]; then
   die "$DEST exists and is not a clone of this repository; move it or set HOLOCHAIN_SKILLS_HOME."
 else
   say "cloning $VERSION into $DEST"
-  git -c advice.detachedHead=false clone --quiet --depth 1 --branch "$VERSION" "$REPO" "$DEST"
+  git -c advice.detachedHead=false clone --quiet --depth 1 --branch "$VERSION" "$REPO" "$DEST" || die "could not clone tag $VERSION from $REPO."
 fi
+
+[ -f "$DEST/scripts/install.ts" ] || die "$VERSION has no scripts/install.ts; pin a tag from v1.0.0-rc.1 on."
 
 # --copy is this script's word for the installer's default; everything else passes through,
 # rebuilt as positional parameters so an argument holding a space stays one argument.
