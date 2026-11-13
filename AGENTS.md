@@ -11,11 +11,10 @@ here, read the second.
 Run this from the root of the project that should get the skill:
 
 ```bash
-git -c advice.detachedHead=false clone --depth 1 --branch v1.0.0-rc.2 https://github.com/Soushi888/holochain-agent-skills.git ~/.holochain-agent-skills
-node ~/.holochain-agent-skills/scripts/install.ts install --link
+curl -fsSL https://raw.githubusercontent.com/Soushi888/holochain-agent-skills/main/install.sh | sh
 ```
 
-The installer needs Node 22.18 or later (or Bun, with `bun` in place of `node`). It never prompts without a terminal, detects every harness directory the project has and links the skill into each. Without git or Node, use the release archive:
+It needs git, and Node 22.18 or later or Bun, and checks for both. It clones the release into `~/.holochain-agent-skills` (or moves that clone to the release), detects every harness directory the project has, and links the skill into each without prompting. Running it again is safe and updates the clone. Pass options after `sh -s --`: `--target claude,cursor`, `--global`, `--copy`, `--dry-run`. Without git or Node, use the release archive:
 
 ```bash
 mkdir -p .claude/skills && curl -fsSL \
@@ -31,20 +30,6 @@ archive's root is one directory per skill, so the extraction lands
 
 Each release also publishes `SHA256SUMS` beside the archive if you want to verify the
 download, and a `.zip` if `tar` is unavailable.
-
-If you would rather have every harness detected and filled in one command, the repository
-ships an installer:
-
-```bash
-git clone https://github.com/Soushi888/holochain-agent-skills /tmp/has
-cd /tmp/has && bun run build
-cd your-project && node /tmp/has/bin/install.mjs install --yes
-```
-
-It never prompts when there is no interactive terminal, so it is safe to run unattended.
-Useful flags: `--global` for the home-directory scope, `--target claude,opencode` to pick
-specific harnesses, `--link` to symlink rather than copy, and `--dry-run` to print what would
-happen. `install.mjs list` shows every skill and every harness path it knows.
 
 ### Confirming it worked
 

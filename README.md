@@ -13,20 +13,23 @@ GitHub Copilot, Cursor, Gemini CLI and every other tool that adopted the format.
 From the root of the project that should get the skill:
 
 ```bash
-git -c advice.detachedHead=false clone --depth 1 --branch v1.0.0-rc.2 https://github.com/Soushi888/holochain-agent-skills.git ~/.holochain-agent-skills
-node ~/.holochain-agent-skills/scripts/install.ts install --link
+curl -fsSL https://raw.githubusercontent.com/Soushi888/holochain-agent-skills/main/install.sh | sh
 ```
 
-The first line puts the release in one place on your machine; the second finds every agent harness the project uses (`.claude`, `.cursor`, `.opencode`, `.github`, `.gemini`, `.agents`) and links the skill into each, so every project shares the one clone. It needs Node 22.18 or later, which runs the TypeScript installer directly, or Bun (`bun` in place of `node`). Add `--global` to install into your home directory instead of the project, `--dry-run` to see what it would do, and drop `--link` to copy rather than link.
+[`install.sh`](install.sh) is short; read it first if you like. It clones the current release into `~/.holochain-agent-skills` (or moves that clone to the current release when it is already there), then runs the bundled installer.
+The installer finds the agent harnesses the project uses (`.claude`, `.cursor`, `.opencode`, `.gemini`, `.agents`, and Copilot's `.github` files) and links the skill into each of them (piped from `curl`, it has no terminal to ask on, so it never prompts).
+Every project links to the one clone, so running the same line again after a new release updates them all.
 
-To move to a later release, check out its tag in the clone, and every linked project follows:
+It needs git, and Node 22.18 or later (which runs the TypeScript installer directly) or Bun; the script checks for both and says what is missing.
+Options go after `sh -s --`: `--global` installs into your home directory instead of the project, `--dry-run` shows what it would do, `--target claude,cursor` picks harnesses, and `--copy` copies instead of linking.
 
 ```bash
-git -C ~/.holochain-agent-skills fetch --depth 1 origin tag v1.0.0-rc.2 && git -C ~/.holochain-agent-skills -c advice.detachedHead=false checkout v1.0.0-rc.2
+curl -fsSL https://raw.githubusercontent.com/Soushi888/holochain-agent-skills/main/install.sh | sh -s -- --global
 ```
 
-Restart your agent afterwards. Most harnesses read skills once, at startup. Then ask it
-anything about Holochain, or invoke it by name (`/holochain` in Claude Code).
+Restart your agent afterwards. Most harnesses read skills once, at startup. Then ask it anything about Holochain, or invoke it by name (`/holochain` in Claude Code).
+
+On Windows, run it from Git Bash or WSL with `--copy` (a link needs Developer Mode there), or use the release archive below.
 
 <details>
 <summary>Other ways to install</summary>
@@ -76,13 +79,16 @@ rsync glue and hits the same wall: Nix store paths are read-only and `rsync -a` 
 that mode, so the *second* `nix develop` fails with a permission error. The hook passes
 `--chmod=u+w`.
 
-**Pick the harnesses yourself.** The installer from the main install takes `--target claude,opencode` to choose harnesses rather than detect them, and `list` prints every skill and every harness path it knows:
+**The same thing by hand.** Without the script, clone the release once and run the installer from it:
 
 ```bash
-node ~/.holochain-agent-skills/scripts/install.ts list
+git -c advice.detachedHead=false clone --depth 1 --branch v1.0.0-rc.2 https://github.com/Soushi888/holochain-agent-skills.git ~/.holochain-agent-skills
+node ~/.holochain-agent-skills/scripts/install.ts install --link
 ```
 
-**Pin a version.** The clone and the archive URL both name a tag, so pinning is just choosing the tag.
+`node ~/.holochain-agent-skills/scripts/install.ts list` prints every skill and every harness path it knows.
+
+**Pin a version.** `| HOLOCHAIN_SKILLS_VERSION=v1.0.0-rc.2 sh` pins the script to a tag, and the archive URL names its tag, so pinning is just choosing the tag.
 Release candidates are marked as prereleases, which means `releases/latest/download` skips
 them: it keeps pointing at the last stable release until 1.0.0 ships.
 
@@ -105,10 +111,9 @@ or drop the glue and use `lib.mkSkillsHook` above. The full breaking list is in
 
 ### Where it installs
 
-The installer links or copies into the paths below. If you extract the archive instead, pick the path yourself. Detection looks for each harness's marker directory in the project root, or in `$HOME`
-with `--global`: exactly one found means that one is used; several found means all of them, or
-an interactive choice if you are at a terminal; none found falls back to `.claude/skills` and
-`.agents/skills`.
+The installer links or copies into the paths below; if you extract the archive instead, pick the path yourself.
+Detection looks for each harness's marker in the project root, or in `$HOME` with `--global`.
+Exactly one found means that one is used; several found means an interactive choice when the installer has a terminal to ask on, and all of them otherwise; none found falls back to `.claude/skills` and `.agents/skills`.
 
 | Harness | Project path | Global path |
 |---------|--------------|-------------|
