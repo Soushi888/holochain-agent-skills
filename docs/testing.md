@@ -152,10 +152,12 @@ directory.
 
 ### Option A - release archive, the documented default
 
+<!-- x-release-please-start-version -->
 ```bash
 mkdir -p /tmp/t6a/.claude/skills && cd /tmp/t6a
 curl -fsSL https://github.com/Soushi888/holochain-agent-skills/releases/download/v1.0.0-rc.2/holochain-agent-skills.tar.gz | tar -xz -C .claude/skills
 ```
+<!-- x-release-please-end -->
 
 | # | Test | Pass condition |
 |---|------|----------------|
@@ -416,4 +418,4 @@ All items below must be ✅ before tagging a release.
 
 ---
 
-*Once all release gate items are checked, tag `v1.0.0` and publish.*
+*Once all release gate items are checked, merge the `1.0.0` release PR (see "Cutting a release" in `CONTRIBUTING.md`).*

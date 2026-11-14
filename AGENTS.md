@@ -16,11 +16,13 @@ curl -fsSL https://raw.githubusercontent.com/Soushi888/holochain-agent-skills/ma
 
 It needs git, and Node 22.18 or later or Bun, and checks for both. It clones the release into `~/.holochain-agent-skills` (or moves that clone to the release), detects every harness directory the project has, and links the skill into each without prompting. Running it again is safe and updates the clone. Pass options after `sh -s --`: `--target claude,cursor`, `--global`, `--copy`, `--dry-run`. Without git or Node, use the release archive:
 
+<!-- x-release-please-start-version -->
 ```bash
 mkdir -p .claude/skills && curl -fsSL \
   https://github.com/Soushi888/holochain-agent-skills/releases/download/v1.0.0-rc.2/holochain-agent-skills.tar.gz \
   | tar -xz -C .claude/skills
 ```
+<!-- x-release-please-end -->
 
 Replace `.claude/skills` with your harness's path if it differs: `.agents/skills` for the
 tool-agnostic location, `.opencode/skills`, `.github/skills` for Copilot, `.gemini/skills`,

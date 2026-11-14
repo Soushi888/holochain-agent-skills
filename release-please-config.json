@@ -1,0 +1,40 @@
+{
+  "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
+  "bootstrap-sha": "59c0d4d85b6556310a0bdffa8183767e589df5d6",
+  "include-component-in-tag": false,
+  "include-v-in-tag": true,
+  "draft": true,
+  "force-tag-creation": true,
+  "prerelease": true,
+  "versioning": "prerelease",
+  "prerelease-type": "rc",
+  "pull-request-title-pattern": "chore(release): ${version}",
+  "packages": {
+    ".": {
+      "release-type": "node",
+      "package-name": "holochain-agent-skills",
+      "changelog-path": "CHANGELOG.md",
+      "exclude-paths": [".github/DISCUSSION_TEMPLATE"],
+      "extra-files": [
+        { "type": "generic", "path": "skills/holochain/SKILL.md" },
+        { "type": "generic", "path": "README.md" },
+        { "type": "generic", "path": "AGENTS.md" },
+        { "type": "generic", "path": "docs/testing.md" },
+        { "type": "generic", "path": "install.sh" }
+      ]
+    }
+  },
+  "changelog-sections": [
+    { "type": "feat", "section": "Added" },
+    { "type": "docs", "section": "Changed" },
+    { "type": "perf", "section": "Changed" },
+    { "type": "revert", "section": "Changed" },
+    { "type": "fix", "section": "Fixed" },
+    { "type": "ci", "section": "Validation" },
+    { "type": "test", "section": "Validation" },
+    { "type": "refactor", "section": "Changed", "hidden": true },
+    { "type": "build", "section": "Build", "hidden": true },
+    { "type": "style", "section": "Style", "hidden": true },
+    { "type": "chore", "section": "Miscellaneous", "hidden": true }
+  ]
+}
