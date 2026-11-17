@@ -1,6 +1,6 @@
 # Roadmap
 
-## v1 - Core Spiral (RELEASE CANDIDATE, `v1.0.0-rc.2` since 2026-11-13; `v1.0.0` not yet tagged)
+## v1 - Core Spiral (`v1.0.0`, Holochain 0.7.1 and later)
 
 **Theme:** Everything needed to build, test, and deploy a Holochain hApp from scratch.
 
@@ -80,3 +80,4 @@ Once both the PAI version and vanilla version are field-tested:
 | 0.2.0 | 2026-05-15 | Expanded progenitor pattern: full DnaProperties setup, bootstrap mode (`Option<AgentPubKey>`), integrity validation enforcement, is_progenitor hdk_extern, init() bootstrap, deploy-time injection via Kangaroo roles_settings; based on Requests & Offers implementation |
 | 1.0.0-rc.1 | 2026-09-04 | First 1.0 release candidate (prerelease). Holochain 0.7 only (hdk=0.7.0, hdi=0.8.0, holonix main-0.7). Repository restructured to references/ + assets/ + scripts/. Example hApp compiles and its Sweettest suite passes. Countersigning, scheduling, cryptography and warrants documented. Validator, version bumper and routing eval in CI. Community files added. Verified end to end by a second model producing code that compiled on first try |
 | 1.0.0-rc.2 | 2026-11-13 | Second candidate, built from the rc.1 field reviews. See `CHANGELOG.md` |
+| 1.0.0 | 2026-11-16 | First stable release. Hard floor at Holochain 0.7.1, a `cargo check` gate on newer 0.7.x, an explicit upgrade chain, and a release policy of one skill minor per Holochain line. See `CHANGELOG.md` |

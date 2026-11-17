@@ -18,7 +18,7 @@ It needs git, and Node 22.18 or later or Bun, and checks for both. It clones the
 
 ```bash
 mkdir -p .claude/skills && curl -fsSL \
-  https://github.com/Soushi888/holochain-agent-skills/releases/download/v1.0.0-rc.2/holochain-agent-skills.tar.gz \
+  https://github.com/Soushi888/holochain-agent-skills/releases/download/v1.0.0/holochain-agent-skills.tar.gz \
   | tar -xz -C .claude/skills
 ```
 
@@ -44,7 +44,8 @@ architecture, entry and link types, validation, capability grants, membranes,
 Sweettest, the TypeScript client, and packaging. If the project you are
 working in uses Holochain 0.6 or earlier, this skill will actively mislead
 you: it documents the 0.7 action model and deliberately carries no 0.6 API
-content. Use the `v0.2.0` tag for 0.6.
+content. Use the `v0.2.0` tag for 0.6. Its floor is 0.7.1: on a project that
+resolves 0.7.0 it stops before writing code and offers the upgrade first.
 
 ---
 

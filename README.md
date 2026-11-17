@@ -38,7 +38,7 @@ On Windows, run it from Git Bash or WSL with `--copy` (a link needs Developer Mo
 
 ```bash
 mkdir -p .claude/skills && curl -fsSL \
-  https://github.com/Soushi888/holochain-agent-skills/releases/download/v1.0.0-rc.2/holochain-agent-skills.tar.gz \
+  https://github.com/Soushi888/holochain-agent-skills/releases/download/v1.0.0/holochain-agent-skills.tar.gz \
   | tar -xz -C .claude/skills
 ```
 
@@ -48,7 +48,7 @@ Replace `.claude/skills` with your harness's path if it differs (the table below
 
 ```nix
 inputs.holochain-agent-skills = {
-  url = "github:Soushi888/holochain-agent-skills/v1.0.0-rc.2";
+  url = "github:Soushi888/holochain-agent-skills/v1.0.0";
   flake = false;
 };
 # consume: "${inputs.holochain-agent-skills}/skills/holochain"
@@ -57,7 +57,7 @@ inputs.holochain-agent-skills = {
 or use the flake, which also hands you the devShell glue:
 
 ```nix
-inputs.holochain-agent-skills.url = "github:Soushi888/holochain-agent-skills/v1.0.0-rc.2";
+inputs.holochain-agent-skills.url = "github:Soushi888/holochain-agent-skills/v1.0.0";
 
 # in your devShell:
 shellHook = ''
@@ -82,15 +82,15 @@ that mode, so the *second* `nix develop` fails with a permission error. The hook
 **The same thing by hand.** Without the script, clone the release once and run the installer from it:
 
 ```bash
-git -c advice.detachedHead=false clone --depth 1 --branch v1.0.0-rc.2 https://github.com/Soushi888/holochain-agent-skills.git ~/.holochain-agent-skills
+git -c advice.detachedHead=false clone --depth 1 --branch v1.0.0 https://github.com/Soushi888/holochain-agent-skills.git ~/.holochain-agent-skills
 node ~/.holochain-agent-skills/scripts/install.ts install --link
 ```
 
 `node ~/.holochain-agent-skills/scripts/install.ts list` prints every skill and every harness path it knows.
 
-**Pin a version.** `| HOLOCHAIN_SKILLS_VERSION=v1.0.0-rc.2 sh` pins the script to a tag (any tag from `v1.0.0-rc.1` on), and the archive URL names its tag, so pinning is just choosing the tag.
+**Pin a version.** `| HOLOCHAIN_SKILLS_VERSION=v1.0.0 sh` pins the script to a tag (any tag from `v1.0.0-rc.1` on), and the archive URL names its tag, so pinning is just choosing the tag.
 Release candidates are marked as prereleases, which means `releases/latest/download` skips
-them: it keeps pointing at the last stable release until 1.0.0 ships.
+them: it always points at the newest stable release.
 
 **If you pinned this repository before 1.0, the path changed.** The repository root used to be
 the skill, so glue that copied the root worked. It no longer does, and it fails silently: the
@@ -140,9 +140,10 @@ can run it unattended.
 
 **Version pins:** `hdk = "=0.7.1"` | `hdi = "=0.8.1"` | `holonix ref=main-0.7`
 
-This release targets Holochain 0.7 only, and carries no 0.6 API content by design. On a 0.6
-project it will actively mislead you. Use the `v0.2.0` tag for 0.6, or the skill's
-`UpgradeHolochain07` workflow to port.
+This release targets Holochain 0.7.1 and later on the 0.7 line, and carries no 0.6 API content by design.
+On a 0.6 project it will actively mislead you, and on 0.7.0 its capability grants do not compile, so the skill stops before writing code on either and offers the upgrade first.
+Use the `v0.2.0` tag for 0.6, or the skill's `UpgradeHolochain07` workflow, which walks the upgrade chain one hop at a time.
+On a 0.7.x newer than the pins above, it runs `cargo check` first and offers a field report if the existing code breaks.
 
 ## Quick start
 
@@ -233,7 +234,7 @@ AGENTS.md                      Install instructions addressed to an agent
 
 ## Community
 
-Questions, ideas, and reports on how the skill behaved on your project go to [Discussions](https://github.com/Soushi888/holochain-agent-skills/discussions). While `v1.0.0-rc.2` is a candidate, a [field report](https://github.com/Soushi888/holochain-agent-skills/discussions/new?category=field-reports) is the most useful thing you can send, and the skill's Feedback Mode lets your agent draft one when it catches the skill being wrong. Issues are for defects you can point at a file.
+Questions, ideas, and reports on how the skill behaved on your project go to [Discussions](https://github.com/Soushi888/holochain-agent-skills/discussions). A [field report](https://github.com/Soushi888/holochain-agent-skills/discussions/new?category=field-reports) is the most useful thing you can send, and the skill's Feedback Mode lets your agent draft one when it catches the skill being wrong. Issues are for defects you can point at a file.
 
 ## Contributing
 
