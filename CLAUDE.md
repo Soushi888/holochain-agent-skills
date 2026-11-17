@@ -102,6 +102,17 @@ Posting and editing go through `gh api graphql` (`createDiscussion`, `updateDisc
 
 The "Skill version" dropdown in the Field Reports and Q&A forms is not part of that checklist: never edit it by hand. `scripts/sync-version-options.ts` rewrites it from the releases (per Holochain line, the newest stable release plus the newest pre-release newer than it), and `.github/workflows/sync-discussion-forms.yml` runs it after every tag, called from `release.yml`, and whenever a release is published, edited or deleted in the web UI. `bun scripts/sync-version-options.ts --check` says whether the forms are in step.
 
+## Every Piece of Feedback Becomes an Issue
+
+Soushi, 2026-11-16: « Pour tout les feedbacks à venir, j'aimerais qu'on fasse des issues. »
+Feedback arrives in many places: a Discussions field report, a Discord message (Paul d'Aoust's semver question became #30), an X reply, a review comment.
+Whatever its source, each actionable point becomes a GitHub issue in this repository, so nothing lives only in a chat.
+
+- **One issue per actionable point**, linking its source (the Discussion, the Discord message quoted with its author and date, the post), labelled `field-report`, `question`, `bug` or `enhancement` as fits, and put on the milestone it belongs to (`v1.0.0-rc.N`, `v1.0.0`, `v1.1.0`).
+- **The Discussion stays the conversation**; the issue tracks the work, and the Discussion links back to it.
+- **The fixing PR closes the issue** with `Closes #N`, and the release issue of its milestone lists it under Content.
+- **A body drafted by the agent opens with the disclosure line** `> **SoushAI analysis.** Drafted by Soushi's AI assistant, reviewed and posted by @Soushi888.`
+
 ## Key Architectural Concepts (for editing reference files accurately)
 
 - Every Holochain domain = one integrity crate (`hdi`) + one coordinator crate (`hdk`)
