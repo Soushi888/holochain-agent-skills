@@ -50,9 +50,10 @@ With no `Cargo.lock`, a manifest cannot settle rows 1 and 2: an exact 0.7.0 pin 
 
 | What the project resolves | Do this |
 |---|---|
-| `holochain_integrity_types` 0.7.1+ (and `hdk` 0.7.x) | Proceed with this skill. This holds for an exact 0.7.0 pin on `hdk` too: the grant types live in `holochain_integrity_types`, which such a pin resolves at 0.7.1 |
-| `holochain_integrity_types` 0.7.0, or `0.7.1-rc.0` / `0.7.1-rc.1` (still the old grant shape; `0.7.1-rc.2` already has the new one) | The capability grant API differs from what this skill teaches. Follow "Already on 0.7.0: moving to 0.7.1" in the **UpgradeHolochain07** workflow first, or say plainly that grant code from this skill will not compile there |
-| `hdk` 0.6.x or older (`hdi` 0.7.x or older) | Stop before writing code. Tell the user this skill's API shapes will not compile there, and offer the **UpgradeHolochain07** workflow, or the 0.6-era skill at tag `v0.2.0` if they are staying on 0.6 |
+| `holochain_integrity_types` 0.7.1 (and `hdk` 0.7.x), up to the versions in `metadata.holochain-versions` above | Proceed with this skill. This holds for an exact 0.7.0 pin on `hdk` too: the grant types live in `holochain_integrity_types`, which such a pin resolves at 0.7.1 |
+| A 0.7.x newer than `metadata.holochain-versions` (`hdk` or `holochain_integrity_types` 0.7.2 and up) | Proceed, but run `cargo check` on the existing code before writing any. If it passes, carry on and say which version you found. If it breaks, stop before writing code, tell the user the skill has not been tested on that version, and offer a field report (**Feedback Mode** below) that names the version the lockfile resolves |
+| `holochain_integrity_types` 0.7.0, or `0.7.1-rc.0` / `0.7.1-rc.1` (still the old grant shape; `0.7.1-rc.2` already has the new one) | Stop before writing code. The capability grant API differs from what this skill teaches, so grant code from it will not compile there. Offer the upgrade to 0.7.1 first: Hop 2 of the **UpgradeHolochain07** workflow |
+| `hdk` 0.6.x or older (`hdi` 0.7.x or older) | Stop before writing code. Tell the user this skill's API shapes will not compile there, and offer the **UpgradeHolochain07** workflow, which walks the upgrade chain one hop at a time from the line you found. If they are staying on their line, its table says which skill tag to install instead (`v0.2.0` for 0.6) |
 | `hdk` 0.8 or 0.9 dev builds, holonix `main` | Say the skill predates that line, and verify every API against the project's own crate sources before using it |
 | Nothing found, or crates from different lines (an `hdk` 0.6 next to `holochain_integrity_types` 0.7, say; `hdk` 0.7.0 with `holochain_integrity_types` 0.7.1 is one line, row 1) | Do not proceed on a guess. Show the user what you found and ask which line the project targets |
 | A new project | The current 0.7 line, as the Scaffold workflows set it up |
@@ -71,7 +72,7 @@ Say which line you found in your first reply, and offer to record it where the n
 | **ManualScaffold** | project files, scaffold without CLI, manual scaffold, by hand, AI creates files, no hc scaffold, scaffold in session | `references/workflows/manual-scaffold.md` |
 | **ImplementZome** | implement zome, create zome, scaffold zome, write zome, full zome, CRUD zome, coordinator and integrity crates | `references/workflows/implement-zome.md` |
 | **DesignAccessControl** | design access control, who can call, allowed to call, cap grant design, capability grants | `references/workflows/design-access-control.md` |
-| **UpgradeHolochain07** | upgrade to 0.7, port from 0.6, still on 0.6, project is on 0.6, hdk 0.6, older holochain, wrong holochain version, migrate hApp, holochain 0.7 upgrade, upgrade holochain version, bring up to date, move to the latest holochain, hdi upgrade | `references/workflows/upgrade-holochain-0.7.md` |
+| **UpgradeHolochain07** | upgrade to 0.7, upgrade to 0.7.1, still on 0.7.0, upgrade chain, port from 0.6, still on 0.6, project is on 0.6, hdk 0.6, older holochain, wrong holochain version, migrate hApp, holochain 0.7 upgrade, upgrade holochain version, bring up to date, move to the latest holochain, hdi upgrade | `references/workflows/upgrade-holochain-0.7.md` |
 | **PackageAndDeploy** | deploy, package, distribute, distribution, kangaroo, installer, desktop app, webhapp | `references/workflows/package-and-deploy.md` |
 
 ## Context Files
@@ -198,7 +199,7 @@ Run this against any zome code being written or reviewed. Each item is a class o
 
 ## Feedback Mode
 
-This skill is a release candidate, and what an agent meets on a project its maintainers have never seen is the one thing its CI cannot measure. So when the skill itself lets you down, offer to report it to the maintainers, with your user's approval.
+This skill is tested against the versions in `metadata.holochain-versions`, and what an agent meets on a project its maintainers have never seen is the one thing its CI cannot measure. So when the skill itself lets you down, offer to report it to the maintainers, with your user's approval.
 
 **What counts.** The skill was wrong, not the user's code:
 - an API, pin or command it gave does not compile or run against the versions the project resolves;
@@ -209,7 +210,7 @@ This skill is a release candidate, and what an agent meets on a project its main
 
 A compiler error in the user's own logic is not a skill defect. Neither is a question the skill never claimed to answer.
 
-**When and how.** First check the project's agent instructions file (AGENTS.md or CLAUDE.md): if it carries the line `holochain-skill-feedback: off`, say nothing. Otherwise finish the user's task first, then make one offer per session, never mid-task, bundling every finding: one sentence on what the skill got wrong or lacked, and how to silence these offers (add `holochain-skill-feedback: off` to AGENTS.md or CLAUDE.md). If the user agrees, draft the report in the shape of the [Field reports form](https://github.com/Soushi888/holochain-agent-skills/discussions/new?category=field-reports): kind of report (defect, suggestion or run report), skill version (`metadata.version` above), harness and model, the Holochain, `hdk` and `hdi` versions the project resolves, the skill file involved, what the skill said, what actually happened, and the fix if you know it. Paste errors literally, but replace absolute paths, user names, project and crate names with placeholders such as `<project>`. Show the draft and let the user edit it.
+**When and how.** First check the project's agent instructions file (AGENTS.md or CLAUDE.md): if it carries the line `holochain-skill-feedback: off`, say nothing. Otherwise finish the user's task first, then make one offer per session, never mid-task, bundling every finding (the one exception is a newer 0.7.x that breaks `cargo check` in **Version Check First**, where the task stops and the offer comes then): one sentence on what the skill got wrong or lacked, and how to silence these offers (add `holochain-skill-feedback: off` to AGENTS.md or CLAUDE.md). If the user agrees, draft the report in the shape of the [Field reports form](https://github.com/Soushi888/holochain-agent-skills/discussions/new?category=field-reports): kind of report (defect, suggestion or run report), skill version (`metadata.version` above), harness and model, the Holochain, `hdk` and `hdi` versions the project resolves, the skill file involved, what the skill said, what actually happened, and the fix if you know it. Paste errors literally, but replace absolute paths, user names, project and crate names with placeholders such as `<project>`. Show the draft and let the user edit it.
 
 **Sending it is the user's act.** Give the user the form link with the draft to paste. Where `gh` is authenticated, you may offer to post it as a discussion instead, but only after the user has approved the final text, and never without that approval. Look up the ids first, then create it:
 
