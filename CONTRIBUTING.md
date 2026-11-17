@@ -74,6 +74,16 @@ One version, declared in four places, and one tag. `package.json`, the `metadata
 
 To rehearse without publishing, run `release.yml` by hand from the Actions tab (`workflow_dispatch`) with the tag as input, or `gh workflow run release.yml --ref <branch> -f tag=vX.Y.Z`. Every gate and every build step runs, `Publish to npm` runs with `--dry-run` and prints the exact command and authentication mode a tag push would use, and the GitHub release is not created. The tag input must match the version in the tree, because `check-versions.sh` runs first.
 
+### Release policy
+
+The skill's version follows the Holochain line it teaches, not the calendar.
+
+- **One minor release of the skill per Holochain line.** The skill's API shapes compile on one line only, so a new Holochain line gets a new minor release of the skill, and the previous minor stays the tag to install for the previous line.
+  The table in `skills/holochain/references/workflows/upgrade-holochain-0.7.md` ("Not upgrading: install the skill for your line instead") maps each line to its tag; add a row when a line gets its release.
+- **A patch release when a Holochain patch breaks something.** Holochain patch releases have broken API shapes before (0.7.1 changed the capability grant types), so a Holochain patch that breaks something the skill teaches gets a patch release of the skill, with the pins, the Version Check table in `SKILL.md` and a new hop in the upgrade chain updated together.
+- **The floor moves with the breaking patch.** The Version Check table names the oldest version the skill's shapes compile on, and stops the agent below it.
+  Raise that floor in the same release that raises the pins.
+
 ### Release candidates
 
 A tag whose version carries a hyphen, such as `v1.0.0-rc.1`, is a prerelease, and the workflow marks the GitHub release as one. The `releases/latest/download` URL skips prereleases, so a candidate never reaches anyone following the stable install line; testers opt in by naming the candidate's own tag in the archive URL from its release page. The version string is the full `1.0.0-rc.1` in all three in-tree places, and the changelog section is `## [1.0.0-rc.1]`. When the candidate becomes the release, rename that section to `## [1.0.0]`, set the version to `1.0.0`, and tag `v1.0.0`; nothing else changes.

@@ -1,12 +1,48 @@
-# Workflow: Upgrade an existing hApp from 0.6 to 0.7
+# Workflow: Upgrade an existing hApp along the Holochain upgrade chain
 
-For a hApp already running on Holochain 0.6. If you are on 0.5, do the 0.6 upgrade first.
+For a hApp on any Holochain line older than the one this skill teaches (see `metadata.holochain-versions` in `SKILL.md`).
+The upgrade is a chain of hops, one per breaking release, walked in order.
 
 **Authoritative source:** [developer.holochain.org/resources/upgrade/upgrade-holochain-0.7](https://developer.holochain.org/resources/upgrade/upgrade-holochain-0.7/). This workflow sequences it and adds what the example hApp in this repo hit in practice. Where the two disagree, the official guide wins.
 
 ---
 
-## Step 0 — Decide whether to go now
+## The upgrade chain
+
+| Hop | The lockfile resolves | Lands on | Where |
+|---|---|---|---|
+| Before the chain | `hdk` 0.5.x or older | 0.6 | Not covered here. Use the official guides, one line at a time, listed at [developer.holochain.org/resources/upgrade](https://developer.holochain.org/resources/upgrade/), then enter at Hop 1 |
+| Hop 1 | `hdk` 0.6.x / `hdi` 0.7.x | 0.7 | **Hop 1: 0.6 to 0.7**, Steps 0 to 6 below |
+| Hop 2 | `holochain_integrity_types` 0.7.0, or `0.7.1-rc.0` / `0.7.1-rc.1` | 0.7.1 | **Hop 2: 0.7.0 to 0.7.1**, at the end |
+
+How to walk it:
+
+1. Detect the starting line from the lockfile, as `SKILL.md` § Version Check First describes. Do not start from the manifest pins.
+2. Start at the hop whose row matches what the lockfile resolves, and walk every later hop in order. Never skip one: each hop assumes the code the previous one left.
+3. Finish each hop at its checkpoint (the workspace compiles) before starting the next, and say which hop you are on.
+4. Stop at the line the skill teaches. Hop 2 is the last hop today; a 0.7.x release newer than `metadata.holochain-versions` is not a hop, it is the "newer 0.7.x" row of Version Check.
+
+Hop 1 already re-pins to the 0.7.1 crates, so a project arriving from Hop 1 skips Hop 2's re-pin (its item 1) and does the rest of Hop 2: the grant rewrite and the other 0.7.1 changes are code that Hop 1 does not port.
+
+### Not upgrading: install the skill for your line instead
+
+This skill's API shapes compile only on the line it teaches.
+A project that stays on an older line should install the skill tag for that line rather than this one.
+
+| Holochain line | Skill tag to install |
+|---|---|
+| 0.6 | `v0.2.0` (`v0.1.0` also targets 0.6, at `hdk` 0.6.0; `v0.2.0` supersedes it) |
+| 0.7 (0.7.1 and later) | `v1.0.x`, the newest patch release of `v1.0` |
+
+There is no skill tag for a line older than 0.6, and none for 0.7.0: take Hop 2, which is a re-pin plus a grant rewrite.
+
+---
+
+## Hop 1: 0.6 to 0.7
+
+For a hApp already running on Holochain 0.6. If you are on 0.5 or older, do the earlier hops first (see the chain above).
+
+### Step 0: Decide whether to go now
 
 Three things make this more than a version bump:
 
@@ -23,7 +59,7 @@ That third point is the decision gate: **every 0.7 network is a new network.**
 
 ---
 
-## Step 1 — Branch and re-pin the toolchain
+### Step 1: Branch and re-pin the toolchain
 
 Expect nothing to compile at the end of this step. That is normal.
 
@@ -75,7 +111,7 @@ Then `cargo update` and `npm install`. Delete every sandbox and conductor data d
 
 ---
 
-## Step 2 — Port the integrity zomes
+### Step 2: Port the integrity zomes
 
 This is the bulk. Do integrity first; coordinator code depends on the types.
 
@@ -104,7 +140,7 @@ The renames you are applying, in full, are in `patterns.md`. The short version:
 
 ---
 
-## Step 3 — Port the coordinator zomes
+### Step 3: Port the coordinator zomes
 
 - `signal_action` matches on `&action.hashed.content.data` with `ActionData::` variants.
 - `get_agent_activity` takes a fourth `GetOptions` argument and returns `AgentActivityStatus`.
@@ -124,7 +160,7 @@ That RUSTFLAGS setting is required. Without it the build fails inside `getrandom
 
 ---
 
-## Step 4 — Conductor config and clients
+### Step 4: Conductor config and clients
 
 Only if you maintain a `conductor-config.yaml`, for example in a Kangaroo build. `NetworkConfig` rejects unknown fields, so a leftover key is a startup failure, not a warning.
 
@@ -142,7 +178,7 @@ JavaScript, see `client.md`:
 
 ---
 
-## Step 5 — Tests
+### Step 5: Tests
 
 Sweettest is the supported path; `hc scaffold` no longer generates Tryorama. <!-- legacy-ok -->
 
@@ -158,7 +194,7 @@ cargo test
 
 ---
 
-## Step 6 — Packaging
+### Step 6: Packaging
 
 Rebuild whatever you ship through and check its own 0.7 support first; conductor pins lag core. Kangaroo `main-0.7` bundles holochain 0.7.1 since 2026-10-22; read `holochainVersion` in its `kangaroo.config.ts`.
 
@@ -166,7 +202,7 @@ Publish the new DNA hashes somewhere your users can see. The old network is not 
 
 ---
 
-## Effort
+### Effort
 
 | Step | Rough effort |
 |---|---|
@@ -181,7 +217,9 @@ Port the smallest hApp first to build the vocabulary, then the larger ones.
 
 ---
 
-## Already on 0.7.0: moving to 0.7.1
+## Hop 2: 0.7.0 to 0.7.1
+
+For a project already on 0.7.0, or arriving from Hop 1 (skip item 1 then).
 
 0.7.1 (2026-10-14) is a patch release with breaking changes in the capability types. A fresh lockfile under an `=0.7.0` pin already pulls the 0.7.1 types, because `hdk =0.7.0` depends on `holochain_zome_types ^0.7.0`. So a project can start failing to compile without anyone touching a version.
 

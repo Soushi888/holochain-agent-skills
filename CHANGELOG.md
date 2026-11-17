@@ -4,6 +4,22 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [1.0.0-rc.3] - 2026-11-16
+
+The third 1.0 candidate, on Holochain 0.7.1. It is rc.2 plus a version floor: after Paul d'Aoust of the Holochain Foundation asked whether the agent should stop on any lockfile older than 0.7.1, given that Holochain patch releases have broken API shapes before, it now does.
+
+### Breaking
+
+- **Hard floor at Holochain 0.7.1.** In `SKILL.md` § Version Check First, a project whose lockfile resolves `holochain_integrity_types` 0.7.0, `0.7.1-rc.0` or `0.7.1-rc.1` used to get a warning and carry on; the agent now stops before writing code and offers the upgrade to 0.7.1 first. `0.7.1-rc.2` already has the new grant shape and passes, and an exact `=0.7.0` pin on `hdk` with a fresh lockfile still resolves the 0.7.1 types and passes too.
+
+### Added
+
+- **A `cargo check` gate for a newer 0.7.x.** On a project that resolves an `hdk` or `holochain_integrity_types` newer than `metadata.holochain-versions` (0.7.2 and up), the agent runs `cargo check` on the existing code before writing any. If it breaks, the agent stops and offers a field report through Feedback Mode, naming the version the lockfile resolves; this is the one offer Feedback Mode makes mid-task.
+- **The upgrade chain** in `references/workflows/upgrade-holochain-0.7.md`: one named hop per breaking release (Hop 1, 0.6 to 0.7, Steps 0 to 6; Hop 2, 0.7.0 to 0.7.1), walked in order from the line the lockfile resolves to the line the skill teaches, with each hop's checkpoint passed before the next. A line older than 0.6 goes through the official upgrade guides first. Version Check routes there for both 0.6 and 0.7.0 projects.
+- **Which skill tag to install for a line you are not upgrading**, in the same workflow: 0.6 takes `v0.2.0`, 0.7 (0.7.1 and later) takes `v1.0.x`.
+- **A release policy** in `CONTRIBUTING.md`: one minor release of the skill per Holochain line, and a patch release when a Holochain patch breaks something the skill teaches.
+- **One install line** ([#27](https://github.com/Soushi888/holochain-agent-skills/pull/27)): `curl -fsSL https://raw.githubusercontent.com/Soushi888/holochain-agent-skills/main/install.sh | sh` clones the release into `~/.holochain-agent-skills`, checks for Node 22.18 or later or Bun, and links the skill into every harness the project has. The release archive stays available for installs without git.
+
 ## [1.0.0-rc.2] - 2026-11-13
 
 The second 1.0 candidate, built from what the first one met in the field. Most changes below trace to a report: an issue, a post on X, or a release upstream that broke the candidate on a fresh project.
