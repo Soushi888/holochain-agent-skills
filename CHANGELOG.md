@@ -4,9 +4,9 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [1.0.0] - 2026-11-16
+## [1.0.0-rc.3] - 2026-11-16
 
-The first stable release, on Holochain 0.7.1. It is rc.2 plus a version floor: after Paul d'Aoust of the Holochain Foundation asked whether the agent should stop on any lockfile older than 0.7.1, given that Holochain patch releases have broken API shapes before, it now does.
+The third 1.0 candidate, on Holochain 0.7.1. It is rc.2 plus a version floor: after Paul d'Aoust of the Holochain Foundation asked whether the agent should stop on any lockfile older than 0.7.1, given that Holochain patch releases have broken API shapes before, it now does.
 
 ### Breaking
 

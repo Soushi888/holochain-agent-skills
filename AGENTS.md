@@ -18,7 +18,7 @@ It needs git, and Node 22.18 or later or Bun, and checks for both. It clones the
 
 ```bash
 mkdir -p .claude/skills && curl -fsSL \
-  https://github.com/Soushi888/holochain-agent-skills/releases/download/v1.0.0/holochain-agent-skills.tar.gz \
+  https://github.com/Soushi888/holochain-agent-skills/releases/download/v1.0.0-rc.3/holochain-agent-skills.tar.gz \
   | tar -xz -C .claude/skills
 ```
 

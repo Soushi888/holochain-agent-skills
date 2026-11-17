@@ -38,7 +38,7 @@ On Windows, run it from Git Bash or WSL with `--copy` (a link needs Developer Mo
 
 ```bash
 mkdir -p .claude/skills && curl -fsSL \
-  https://github.com/Soushi888/holochain-agent-skills/releases/download/v1.0.0/holochain-agent-skills.tar.gz \
+  https://github.com/Soushi888/holochain-agent-skills/releases/download/v1.0.0-rc.3/holochain-agent-skills.tar.gz \
   | tar -xz -C .claude/skills
 ```
 
@@ -48,7 +48,7 @@ Replace `.claude/skills` with your harness's path if it differs (the table below
 
 ```nix
 inputs.holochain-agent-skills = {
-  url = "github:Soushi888/holochain-agent-skills/v1.0.0";
+  url = "github:Soushi888/holochain-agent-skills/v1.0.0-rc.3";
   flake = false;
 };
 # consume: "${inputs.holochain-agent-skills}/skills/holochain"
@@ -57,7 +57,7 @@ inputs.holochain-agent-skills = {
 or use the flake, which also hands you the devShell glue:
 
 ```nix
-inputs.holochain-agent-skills.url = "github:Soushi888/holochain-agent-skills/v1.0.0";
+inputs.holochain-agent-skills.url = "github:Soushi888/holochain-agent-skills/v1.0.0-rc.3";
 
 # in your devShell:
 shellHook = ''
@@ -82,15 +82,15 @@ that mode, so the *second* `nix develop` fails with a permission error. The hook
 **The same thing by hand.** Without the script, clone the release once and run the installer from it:
 
 ```bash
-git -c advice.detachedHead=false clone --depth 1 --branch v1.0.0 https://github.com/Soushi888/holochain-agent-skills.git ~/.holochain-agent-skills
+git -c advice.detachedHead=false clone --depth 1 --branch v1.0.0-rc.3 https://github.com/Soushi888/holochain-agent-skills.git ~/.holochain-agent-skills
 node ~/.holochain-agent-skills/scripts/install.ts install --link
 ```
 
 `node ~/.holochain-agent-skills/scripts/install.ts list` prints every skill and every harness path it knows.
 
-**Pin a version.** `| HOLOCHAIN_SKILLS_VERSION=v1.0.0 sh` pins the script to a tag (any tag from `v1.0.0-rc.1` on), and the archive URL names its tag, so pinning is just choosing the tag.
+**Pin a version.** `| HOLOCHAIN_SKILLS_VERSION=v1.0.0-rc.3 sh` pins the script to a tag (any tag from `v1.0.0-rc.1` on), and the archive URL names its tag, so pinning is just choosing the tag.
 Release candidates are marked as prereleases, which means `releases/latest/download` skips
-them: it always points at the newest stable release.
+them: it keeps pointing at the last stable release until 1.0.0 ships.
 
 **If you pinned this repository before 1.0, the path changed.** The repository root used to be
 the skill, so glue that copied the root worked. It no longer does, and it fails silently: the
@@ -234,7 +234,7 @@ AGENTS.md                      Install instructions addressed to an agent
 
 ## Community
 
-Questions, ideas, and reports on how the skill behaved on your project go to [Discussions](https://github.com/Soushi888/holochain-agent-skills/discussions). A [field report](https://github.com/Soushi888/holochain-agent-skills/discussions/new?category=field-reports) is the most useful thing you can send, and the skill's Feedback Mode lets your agent draft one when it catches the skill being wrong. Issues are for defects you can point at a file.
+Questions, ideas, and reports on how the skill behaved on your project go to [Discussions](https://github.com/Soushi888/holochain-agent-skills/discussions). While `v1.0.0-rc.3` is a candidate, a [field report](https://github.com/Soushi888/holochain-agent-skills/discussions/new?category=field-reports) is the most useful thing you can send, and the skill's Feedback Mode lets your agent draft one when it catches the skill being wrong. Issues are for defects you can point at a file.
 
 ## Contributing
 

@@ -14,7 +14,7 @@
 # POSIX sh, so it runs under dash, bash and the BSD and macOS shells alike.
 set -eu
 
-VERSION="${HOLOCHAIN_SKILLS_VERSION:-v1.0.0}" # x-release-please-version
+VERSION="${HOLOCHAIN_SKILLS_VERSION:-v1.0.0-rc.3}" # x-release-please-version
 REPO="https://github.com/Soushi888/holochain-agent-skills.git"
 DEST="${HOLOCHAIN_SKILLS_HOME:-$HOME/.holochain-agent-skills}"
 
