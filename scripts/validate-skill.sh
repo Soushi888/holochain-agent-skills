@@ -65,6 +65,7 @@ find . -name '*.md' -type f \
     ! -path './.git/*' \
     ! -path './node_modules/*' \
     ! -path './.worktrees/*' \
+    ! -path './.claude/*' \
     ! -path "./$SKILL_DIR/assets/*" \
     ! -path "./$SKILL_DIR/references/example-happ/*" \
     ! -path './scripts/*' \
