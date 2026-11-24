@@ -47,3 +47,5 @@ R40	A user lost their laptop; can they get their source chain back on a new mach
 R41	Our Windows installer and our Linux CI build of the same commit give different DNA hashes, so users end up on separate networks.	references/deployment.md
 R42	Our Sweettest suite takes over two hours on GitHub Actions and hits the job time limit, how do we split it?	references/testing.md
 R43	Right after launch the first call_remote to another agent fails with a network error even though they are online.	references/networking.md
+R44	We are about to tag the release, can you check whether this hApp is fit to ship to a network?	references/workflows/core-review-council.md
+R45	Before we cut the release I want a pre-release review of the whole hApp, the way core developers would read it.	references/workflows/core-review-council.md

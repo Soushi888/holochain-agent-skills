@@ -66,6 +66,7 @@ Say which line you found in your first reply, and offer to record it where the n
 | Workflow | Trigger | File |
 |----------|---------|------|
 | **ReviewZome** | review zome, audit zome, check implementation, validate patterns, before implementing, PR review, pull request, sanity check, double-check, code review on zome | `references/workflows/review-zome.md` |
+| **CoreReviewCouncil** | review before a tag, review before release, release review, pre-release review, ready to ship, fit to ship, core review, review council, council review, whole hApp review | `references/workflows/core-review-council.md` |
 | **DesignDataModel** | design data model, model entries, what entries, what links, entry vs link, DHT schema, DHT shape | `references/workflows/design-data-model.md` |
 | **Scaffold** | scaffold, new happ, new project, setup environment, init project, Holonix, nix develop, hc scaffold | `references/workflows/scaffold.md` |
 | **ManualScaffold** | project files, scaffold without CLI, manual scaffold, by hand, AI creates files, no hc scaffold, scaffold in session | `references/workflows/manual-scaffold.md` |

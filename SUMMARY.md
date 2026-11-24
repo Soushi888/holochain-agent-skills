@@ -44,6 +44,7 @@
 - [Implement Zome](skills/holochain/references/workflows/implement-zome.md)
 - [Design Access Control](skills/holochain/references/workflows/design-access-control.md)
 - [Review Zome](skills/holochain/references/workflows/review-zome.md)
+- [Core Review Council](skills/holochain/references/workflows/core-review-council.md)
 - [Package & Deploy](skills/holochain/references/workflows/package-and-deploy.md)
 - [Upgrade to Holochain 0.7](skills/holochain/references/workflows/upgrade-holochain-0.7.md)
 
