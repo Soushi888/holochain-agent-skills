@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Added
+
+- **The CoreReviewCouncil workflow** (`references/workflows/core-review-council.md`): a review of a whole hApp before a tag or a release by four archetypal core reviewers, each with one lane (integrity and the trust root, the grammar of coordination, what the DHT does with the ops, the capability and release surface), in two rounds of code-cited findings and a joint verdict with its dissent.
+  It depends on no harness: one agent can play the four members in turn, or each can run as its own subagent.
+
 ## [1.0.0-rc.2] - 2026-11-13
 
 The second 1.0 candidate, built from what the first one met in the field. Most changes below trace to a report: an issue, a post on X, or a release upstream that broke the candidate on a fresh project.
